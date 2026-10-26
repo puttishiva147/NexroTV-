@@ -114,9 +114,7 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
             if (page == "Home" && ::dockRow.isInitialized && dockRow.childCount > 0) {
                 dockRow.getChildAt(selectedIndex.coerceIn(0, dockRow.childCount - 1)).requestFocus()
             } else {
-                val firstControl = root.focusables(View.FOCUS_FORWARD)
-                    .firstOrNull { it !== root && it.isFocusable && it.visibility == View.VISIBLE }
-                if (firstControl != null) firstControl.requestFocus() else root.requestFocus()
+                root.requestFocus()
             }
         }
     }
