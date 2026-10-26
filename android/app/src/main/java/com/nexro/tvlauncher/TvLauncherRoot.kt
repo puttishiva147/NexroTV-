@@ -200,6 +200,36 @@ fun TvLauncherRoot(onOpenRemote: () -> Unit = {}) {
                 Text(SimpleDateFormat("a", Locale.getDefault()).format(Date()),
                     color = Color(0xFF93A3BD), fontSize = 31.sp, modifier = Modifier.padding(bottom = 12.dp))
             }
+            Spacer(Modifier.height(26.dp))
+            // Aurora-inspired glance widgets: at-a-glance cards, not decorative placeholders.
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column(
+                    Modifier.weight(1f).clip(RoundedCornerShape(22.dp))
+                        .background(Color(0xAA151C29)).border(1.dp, Color.White.copy(alpha = 0.13f), RoundedCornerShape(22.dp))
+                        .padding(horizontal = 18.dp, vertical = 14.dp)
+                ) {
+                    Text("YOUR APPS", color = Color(0xFF9BAAC0), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
+                    Spacer(Modifier.height(7.dp))
+                    Text("${apps.size} ready to launch", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Choose an app from the dock below", color = Color(0xFFB4BED0), fontSize = 12.sp)
+                }
+                Column(
+                    Modifier.weight(1f).clip(RoundedCornerShape(22.dp))
+                        .background(Color(0xAA151C29)).border(1.dp, Color.White.copy(alpha = 0.13f), RoundedCornerShape(22.dp))
+                        .padding(horizontal = 18.dp, vertical = 14.dp)
+                ) {
+                    Text("QUICK CONTROLS", color = Color(0xFF9BAAC0), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
+                    Spacer(Modifier.height(7.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        LauncherButton("Wi-Fi", theme, Modifier.width(82.dp)) {
+                            runCatching { context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                        }
+                        LauncherButton("Settings", theme, Modifier.width(100.dp)) { settingsSection = null; settingsOpen = true }
+                        LauncherButton("Remote", theme, Modifier.width(90.dp), onClick = onOpenRemote)
+                    }
+                    Text("System settings open on the TV; availability depends on Android TV.", color = Color(0xFFB4BED0), fontSize = 11.sp)
+                }
+            }
             Spacer(Modifier.weight(1f))
             Box(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(34.dp))
