@@ -63,14 +63,6 @@ private val tvPalettes = listOf(
     TvPalette("Graphite", Color(0xFF0F0F10), Color(0xFF232325), Color(0xFFEDEDED), Color(0xFF121212), Color.White, Color(0xFF9A9A9F), Color(0xFFA0A0A8))
 )
 
-class ComposeTvLauncherActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        window.decorView.systemUiVisibility = 5894 or 1024 or 512
-        setContent { TvLauncherRoot() }
-    }
-}
-
 @Composable
 private fun TvLauncherRoot() {
     val context = LocalContext.current
