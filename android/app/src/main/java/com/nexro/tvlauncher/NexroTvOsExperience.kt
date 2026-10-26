@@ -171,11 +171,11 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
         root.addView(txt("Settings",30f,white,true),LinearLayout.LayoutParams(-1,42).apply{topMargin=15})
         root.addView(txt("Make Nexro feel right for your living room.",13f,muted))
         val list=LinearLayout(a).apply{orientation=1}
-        setting(list,"Appearance","Dark cinematic theme","Optimized for TV viewing"){}
+        setting(list,"Appearance","Dark cinematic theme","Optimized for TV viewing"){android.app.AlertDialog.Builder(a).setTitle("Appearance").setMessage("Nexro currently uses its dark cinematic theme throughout the launcher.").setPositiveButton("OK",null).show()}
         setting(list,"Motion",if(motion())"Animations on" else "Reduced motion","Toggle card focus scaling"){p.edit().putBoolean("motion",!motion()).apply();show("Settings")}
         setting(list,"Phone remote","Optional local-network pairing","Pairing never blocks the launcher"){remoteSettings()}
-        setting(list,"Network","Local connection only","The phone remote uses the same Wi-Fi network"){}
-        setting(list,"Privacy","Favorites stored locally","Nexro stores preferences on this device"){}
+        setting(list,"Network","Local connection only","The phone remote uses the same Wi-Fi network"){android.app.AlertDialog.Builder(a).setTitle("Network").setMessage("Phone remote pairing requires the TV and phone to be on the same Wi-Fi network. Pairing is optional.").setPositiveButton("OK",null).show()}
+        setting(list,"Privacy","Favorites stored locally","Nexro stores preferences on this device"){android.app.AlertDialog.Builder(a).setTitle("Privacy").setMessage("Nexro saves favorites and motion preferences in local app storage. No media catalog is connected.").setPositiveButton("OK",null).show()}
         setting(list,"About Nexro","Version 1.1.0","Native launcher for installed Android applications"){android.app.AlertDialog.Builder(a).setTitle("About Nexro").setMessage("Nexro TV Launcher\nVersion 1.1.0\nMedia catalog: not configured").setPositiveButton("OK",null).show()}
         setting(list,"Reset preferences","Clear favorites and motion settings","Does not uninstall apps or erase Android data"){
             android.app.AlertDialog.Builder(a).setTitle("Reset Nexro?").setMessage("Clear saved favorites and motion preferences?").setNegativeButton("Cancel",null).setPositiveButton("Reset"){_,_->p.edit().clear().apply();fav.clear();show("Settings")}.show()
