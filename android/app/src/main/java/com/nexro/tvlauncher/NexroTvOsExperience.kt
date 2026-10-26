@@ -368,10 +368,10 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
         for (candidate in candidates) {
             try {
                 val intent = Intent(candidate).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                if (intent.resolveActivity(a.packageManager) != null) {
-                    a.startActivity(intent)
-                    return
-                }
+                // Try the system intent directly: resolveActivity can return null on TV builds
+                // because of package-visibility filtering even when Settings can be launched.
+                a.startActivity(intent)
+                return
             } catch (_: Exception) { }
         }
         AlertDialog.Builder(a)
