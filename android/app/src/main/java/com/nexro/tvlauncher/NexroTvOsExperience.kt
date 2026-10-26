@@ -361,16 +361,16 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
                 setOnClickListener { openSystemPage(action) }
             }
         val settingsTiles = listOf(
-            Triple("⌁", "Network", "Wi-Fi & internet", android.provider.Settings.ACTION_WIFI_SETTINGS),
-            Triple("ᛒ", "Bluetooth", "Pair devices", android.provider.Settings.ACTION_BLUETOOTH_SETTINGS),
-            Triple("☼", "Display", "Screen preferences", android.provider.Settings.ACTION_DISPLAY_SETTINGS),
-            Triple("♫", "Sound", "Audio & volume", android.provider.Settings.ACTION_SOUND_SETTINGS),
-            Triple("⚙", "System Settings", "All TV settings", android.provider.Settings.ACTION_SETTINGS)
+            listOf("⌁", "Network", "Wi-Fi & internet", android.provider.Settings.ACTION_WIFI_SETTINGS),
+            listOf("ᛒ", "Bluetooth", "Pair devices", android.provider.Settings.ACTION_BLUETOOTH_SETTINGS),
+            listOf("☼", "Display", "Screen preferences", android.provider.Settings.ACTION_DISPLAY_SETTINGS),
+            listOf("♫", "Sound", "Audio & volume", android.provider.Settings.ACTION_SOUND_SETTINGS),
+            listOf("⚙", "System Settings", "All TV settings", android.provider.Settings.ACTION_SETTINGS)
         )
         settingsTiles.chunked(2).forEach { pair ->
             val row = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL }
             pair.forEach { item ->
-                row.addView(quickTile(item.first, item.second, item.third, item.fourth),
+                row.addView(quickTile(item[0], item[1], item[2], item[3]),
                     LinearLayout.LayoutParams(0, dp(116), 1f).apply {
                         marginEnd = dp(10); bottomMargin = dp(10)
                     })
