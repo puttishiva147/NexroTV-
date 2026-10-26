@@ -215,14 +215,32 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
             "Large" -> 72
             else -> 60
         }
+        val style = prefs.getString("icon_style", "Squircle") ?: "Squircle"
         val iconFrame = FrameLayout(a).apply {
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                intArrayOf(Color.argb(105, 44, 57, 80), Color.argb(80, 12, 18, 31))).apply {
-                cornerRadius = dp(20).toFloat()
-                setStroke(dp(1), Color.argb(45, 255, 255, 255))
+            background = when (style) {
+                "Rounded" -> GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                    intArrayOf(Color.argb(112, 54, 67, 91), Color.argb(88, 14, 20, 33))).apply {
+                    cornerRadius = dp(15).toFloat()
+                    setStroke(dp(1), Color.argb(55, 255, 255, 255))
+                }
+                "Glass" -> GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                    intArrayOf(Color.argb(92, 160, 184, 220), Color.argb(48, 30, 43, 66))).apply {
+                    cornerRadius = dp(20).toFloat()
+                    setStroke(dp(1), Color.argb(110, 230, 240, 255))
+                }
+                "Minimal" -> GradientDrawable().apply {
+                    cornerRadius = dp(16).toFloat()
+                    setColor(Color.TRANSPARENT)
+                    setStroke(dp(1), Color.argb(150, 220, 232, 255))
+                }
+                else -> GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                    intArrayOf(Color.argb(105, 44, 57, 80), Color.argb(80, 12, 18, 31))).apply {
+                    cornerRadius = dp(21).toFloat()
+                    setStroke(dp(1), Color.argb(45, 255, 255, 255))
+                }
             }
             clipToOutline = true
-            outlineProvider = iconOutline()
+            outlineProvider = if (style == "Rounded") ViewOutlineProvider.BACKGROUND else iconOutline()
         }
         val icon = ImageView(a).apply {
             setImageDrawable(item.icon)
