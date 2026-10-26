@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -35,7 +36,7 @@ class MainActivity : Activity() {
     private lateinit var ipView: TextView
     private lateinit var bridge: TvBridge
     private val apps = mutableListOf<Pair<String, Intent>>()
-    private val tiles = mutableListOf<TextView>()
+    private val tiles = mutableListOf<View>()
     private var selected = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -152,19 +153,30 @@ class MainActivity : Activity() {
                 rowApps.forEach { app ->
                     val idx = apps.indexOf(app)
                     val label = app.first
-                    val view = TextView(this).apply {
-                        text = "◈\n\n$label"
-                        textSize = 14f
+                    val view = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL
                         gravity = Gravity.CENTER
-                        setTextColor(white)
-                        setPadding(8, 12, 8, 12)
+                        setPadding(8, 12, 8, 10)
                         background = rounded(tile, 17, Color.rgb(45, 52, 66))
                         isFocusable = true
                         isFocusableInTouchMode = true
                         contentDescription = "Open $label"
+                        val appIcon = ImageView(this@MainActivity).apply {
+                            try { setImageDrawable(packageManager.getApplicationIcon(apps[idx].second.component?.packageName ?: "")) } catch (_: Exception) {}
+                            scaleType = ImageView.ScaleType.FIT_CENTER
+                        }
+                        addView(appIcon, LinearLayout.LayoutParams(42, 42))
+                        addView(TextView(this@MainActivity).apply {
+                            text = label
+                            textSize = 13f
+                            gravity = Gravity.CENTER
+                            maxLines = 1
+                            ellipsize = android.text.TextUtils.TruncateAt.END
+                            setTextColor(white)
+                            setPadding(0, 9, 0, 0)
+                        }, LinearLayout.LayoutParams(-1, -2))
                         setOnFocusChangeListener { v, focus ->
                             v.background = rounded(if (focus) Color.rgb(26, 57, 55) else tile, 17, if (focus) mint else Color.rgb(45, 52, 66))
-                            setTextColor(if (focus) mint else white)
                         }
                         setOnClickListener { launchApp(idx) }
                     }
