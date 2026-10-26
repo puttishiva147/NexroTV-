@@ -420,7 +420,7 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
         top.addView(text("nexro", 28f, white, true))
         top.addView(text(" TV", 18f, muted))
         top.addView(View(a), LinearLayout.LayoutParams(0, 1, 1f))
-        top.addView(focusButton("‹  Settings") { show("IconStyle") })
+        top.addView(focusButton("‹  Settings") { show("Settings") })
         outer.addView(top, LinearLayout.LayoutParams(-1, dp(54)))
         val panel = LinearLayout(a).apply {
             orientation = LinearLayout.VERTICAL
