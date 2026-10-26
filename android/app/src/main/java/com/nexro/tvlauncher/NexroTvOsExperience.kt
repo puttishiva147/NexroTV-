@@ -458,6 +458,19 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
                     cornerRadius = dp(18).toFloat(); setColor(Color.argb(40, 255, 255, 255)); setStroke(dp(1), Color.argb(120,255,255,255))
                 }
             }
+            // Preview a real installed app icon instead of an empty sample tile.
+            val sampleIcon = apps.firstOrNull()?.icon
+            if (sampleIcon != null) {
+                val sample = ImageView(a).apply {
+                    setImageDrawable(sampleIcon.constantState?.newDrawable(a.resources)?.mutate() ?: sampleIcon)
+                    scaleType = ImageView.ScaleType.FIT_CENTER
+                    setPadding(dp(8), dp(8), dp(8), dp(8))
+                }
+                preview.addView(sample, FrameLayout.LayoutParams(-1, -1))
+            } else {
+                preview.addView(text("N", 25f, white, true).apply { gravity = Gravity.CENTER },
+                    FrameLayout.LayoutParams(-1, -1))
+            }
             option.addView(preview, LinearLayout.LayoutParams(dp(54), dp(54)))
             option.addView(text(style, 13f, if (selected) white else muted, selected).apply {
                 gravity = Gravity.CENTER; setPadding(0, dp(8), 0, 0)
