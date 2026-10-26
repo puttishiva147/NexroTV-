@@ -348,9 +348,12 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.CENTER_VERTICAL
                 isFocusable = true
+                isFocusableInTouchMode = true
                 isClickable = true
                 setPadding(dp(18), dp(14), dp(18), dp(14))
                 background = glassPanel()
+                elevation = dp(4).toFloat()
+                contentDescription = "$title. Opens Android system settings"
                 addView(text(glyph, 27f, blue, true), LinearLayout.LayoutParams(-1, dp(34)))
                 addView(text(title, 17f, white, true).apply { setPadding(0, dp(7), 0, dp(4)) },
                     LinearLayout.LayoutParams(-1, -2))
@@ -361,7 +364,11 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
                     val scale = if (focused && motion()) 1.025f else 1f
                     v.animate().scaleX(scale).scaleY(scale).setDuration(if (motion()) 140L else 0L).start()
                 }
-                setOnClickListener { openSystemPage(action) }
+                setOnClickListener {
+                    isPressed = true
+                    postDelayed({ isPressed = false }, 90L)
+                    openSystemPage(action)
+                }
             }
         val settingsTiles = listOf(
             listOf("⌁", "Network", "Wi-Fi & internet", android.provider.Settings.ACTION_WIFI_SETTINGS),
@@ -400,17 +407,11 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
         for (candidate in candidates) {
             try {
                 val intent = Intent(candidate).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                // Try the system intent directly: resolveActivity can return null on TV builds
-                // because of package-visibility filtering even when Settings can be launched.
                 a.startActivity(intent)
                 return
             } catch (_: Exception) { }
         }
-        AlertDialog.Builder(a)
-            .setTitle("System settings unavailable")
-            .setMessage("This TV does not expose that settings page to launcher apps. Try opening All Android Settings or use the TV manufacturer's Settings button.")
-            .setPositiveButton("OK", null)
-            .show()
+        Toast.makeText(a, "This TV firmware does not expose that Android settings page to apps.", Toast.LENGTH_LONG).show()
     }
 
     private fun buildIconStyle() {
