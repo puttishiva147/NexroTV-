@@ -81,14 +81,14 @@ class MainActivity : Activity() {
             if (bold) typeface = Typeface.create("sans-serif", Typeface.BOLD)
             includeFontPadding = false
         }
-        val background = Color.rgb(17, 21, 31)
+        val backgroundColor = Color.rgb(17, 21, 31)
         val primary = Color.rgb(245, 248, 255)
         val secondary = Color.rgb(164, 176, 198)
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(26), dp(14), dp(26), dp(14))
             background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(background)
+                setColor(backgroundColor)
                 cornerRadius = dp(24).toFloat()
                 setStroke(dp(1), Color.rgb(53, 66, 88))
             }
