@@ -5,6 +5,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.Bitmap
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
 import android.media.AudioManager
 import android.os.Bundle
 import android.view.Gravity
@@ -127,6 +130,15 @@ class MainActivity : Activity() {
                 LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
             content.addView(infoCard("PAIRING PIN", bridge.pin, "Six digits; only share with your own phone"),
                 LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
+            try {
+                val qrUrl = "http://${localIp()}:8765/?pin=${bridge.pin}"
+                val matrix = QRCodeWriter().encode(qrUrl, BarcodeFormat.QR_CODE, dp(180), dp(180))
+                val bitmap = Bitmap.createBitmap(matrix.width, matrix.height, Bitmap.Config.ARGB_8888)
+                for (x in 0 until matrix.width) for (y in 0 until matrix.height) bitmap.setPixel(x, y, if (matrix[x, y]) Color.BLACK else Color.WHITE)
+                val qr = ImageView(this).apply { setImageBitmap(bitmap); contentDescription = "Scan to open Nexro remote pairing"; setPadding(dp(8), dp(8), dp(8), dp(8)); setBackgroundColor(Color.WHITE) }
+                content.addView(qr, LinearLayout.LayoutParams(dp(196), dp(196)).apply { gravity = Gravity.CENTER; bottomMargin = dp(10) })
+                content.addView(label("OR SCAN QR CODE WITH YOUR PHONE CAMERA", 11f, secondary, true).apply { gravity = Gravity.CENTER; setPadding(0, 0, 0, dp(10)) })
+            } catch (_: Exception) { }
             content.addView(label("1. Open http://$address on your phone.\n2. Enter the 6-digit PIN.\n3. Stay on the same Wi-Fi network.", 14f, primary).apply {
                 setLineSpacing(dp(4).toFloat(), 1f)
                 setPadding(0, 0, 0, dp(12))
