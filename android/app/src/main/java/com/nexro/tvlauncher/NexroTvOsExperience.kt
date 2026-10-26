@@ -340,15 +340,44 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
         outer.addView(divider(), LinearLayout.LayoutParams(-1, dp(1)).apply { topMargin = dp(12); bottomMargin = dp(14) })
 
         val grid = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
-        fun shortcut(glyph: String, title: String, subtitle: String, action: String) {
-            grid.addView(actionRow(glyph, title, subtitle) { openSystemPage(action) },
-                LinearLayout.LayoutParams(-1, dp(72)).apply { bottomMargin = dp(8) })
+        fun quickTile(glyph: String, title: String, subtitle: String, action: String): View =
+            LinearLayout(a).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_VERTICAL
+                isFocusable = true
+                isClickable = true
+                setPadding(dp(18), dp(14), dp(18), dp(14))
+                background = glassPanel()
+                addView(text(glyph, 27f, blue, true), LinearLayout.LayoutParams(-1, dp(34)))
+                addView(text(title, 17f, white, true).apply { setPadding(0, dp(7), 0, dp(4)) },
+                    LinearLayout.LayoutParams(-1, -2))
+                addView(text(subtitle, 12f, muted).apply { maxLines = 2 },
+                    LinearLayout.LayoutParams(-1, -2))
+                setOnFocusChangeListener { v, focused ->
+                    v.background = if (focused) tileBackground(true) else glassPanel()
+                    val scale = if (focused && motion()) 1.025f else 1f
+                    v.animate().scaleX(scale).scaleY(scale).setDuration(if (motion()) 140L else 0L).start()
+                }
+                setOnClickListener { openSystemPage(action) }
+            }
+        val settingsTiles = listOf(
+            Triple("⌁", "Network", "Wi-Fi & internet", android.provider.Settings.ACTION_WIFI_SETTINGS),
+            Triple("ᛒ", "Bluetooth", "Pair devices", android.provider.Settings.ACTION_BLUETOOTH_SETTINGS),
+            Triple("☼", "Display", "Screen preferences", android.provider.Settings.ACTION_DISPLAY_SETTINGS),
+            Triple("♫", "Sound", "Audio & volume", android.provider.Settings.ACTION_SOUND_SETTINGS),
+            Triple("⚙", "System Settings", "All TV settings", android.provider.Settings.ACTION_SETTINGS)
+        )
+        settingsTiles.chunked(2).forEach { pair ->
+            val row = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL }
+            pair.forEach { item ->
+                row.addView(quickTile(item.first, item.second, item.third, item.fourth),
+                    LinearLayout.LayoutParams(0, dp(116), 1f).apply {
+                        marginEnd = dp(10); bottomMargin = dp(10)
+                    })
+            }
+            if (pair.size == 1) row.addView(View(a), LinearLayout.LayoutParams(0, dp(116), 1f))
+            grid.addView(row, LinearLayout.LayoutParams(-1, dp(126)))
         }
-        shortcut("⌁", "Network & Internet", "Wi-Fi and available network controls", android.provider.Settings.ACTION_WIFI_SETTINGS)
-        shortcut("ᛒ", "Bluetooth", "Pair and manage Bluetooth devices", android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
-        shortcut("☼", "Display", "Screen, resolution and display preferences", android.provider.Settings.ACTION_DISPLAY_SETTINGS)
-        shortcut("♫", "Sound", "Volume and audio settings", android.provider.Settings.ACTION_SOUND_SETTINGS)
-        shortcut("⚙", "All Android Settings", "Open the TV's native Settings application", android.provider.Settings.ACTION_SETTINGS)
         outer.addView(grid, LinearLayout.LayoutParams(-1, 0, 1f))
     }
 
