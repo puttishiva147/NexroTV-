@@ -1,6 +1,9 @@
 package com.nexro.tvlauncher
 
 import android.app.Activity
+import android.media.AudioManager
+import android.view.KeyEvent
+import org.json.JSONObject
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -193,6 +196,37 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
         box.addView(txt(title,23f,white,true).apply{gravity=Gravity.CENTER})
         box.addView(txt(desc,13f,muted).apply{gravity=Gravity.CENTER;setPadding(0,9,0,0)})
         root.addView(box,LinearLayout.LayoutParams(-1,0,1f))
+    }
+
+    fun executeRemote(action:String,value:String?):JSONObject {
+        var ok=true
+        val message:String
+        when(action) {
+            "volume_up","volume_down","mute","unmute" -> {
+                val audio=a.getSystemService(Activity.AUDIO_SERVICE) as AudioManager
+                val direction=when(action){"volume_up"->AudioManager.ADJUST_RAISE;"volume_down"->AudioManager.ADJUST_LOWER;"mute"->AudioManager.ADJUST_MUTE;else->AudioManager.ADJUST_UNMUTE}
+                audio.adjustStreamVolume(AudioManager.STREAM_MUSIC,direction,AudioManager.FLAG_SHOW_UI)
+                message=when(action){"volume_up"->"Volume up requested.";"volume_down"->"Volume down requested.";"mute"->"Mute requested.";else->"Sound enabled."}
+            }
+            "home" -> { a.runOnUiThread { show("Home") }; message="Returned to Nexro home." }
+            "settings" -> { a.runOnUiThread { show("Settings") }; message="Opened Nexro settings." }
+            "back" -> { a.runOnUiThread { if(page!="Home") show("Home") else a.onBackPressed() }; message="Back requested." }
+            "open_app" -> {
+                val term=value.orEmpty().trim()
+                val item=apps.firstOrNull{it.name.contains(term,true)||it.pkg.contains(term,true)}
+                if(item==null){ok=false;message="App not found: "+term}else{a.runOnUiThread{launch(item)};message="Opening "+item.name+"."}
+            }
+            "select" -> { if(apps.isEmpty()){ok=false;message="No launchable apps found."}else{a.runOnUiThread{launch(apps.first())};message="Opening "+apps.first().name+"."} }
+            "play","pause" -> {
+                val audio=a.getSystemService(Activity.AUDIO_SERVICE) as AudioManager
+                audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE))
+                audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP,KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE))
+                message="Media key sent; the active app decides whether to respond."
+            }
+            "up","down","left","right" -> { a.runOnUiThread { if(page=="Home"||page=="Apps") show("Apps") }; message="Opened app navigation. Use the TV remote to choose an app." }
+            else -> { ok=false;message="Unsupported command: "+action }
+        }
+        return JSONObject().put("ok",ok).put("executed",ok).put("simulated",false).put("action",action).put("message",message)
     }
 
     private fun launch(item:Item) {
