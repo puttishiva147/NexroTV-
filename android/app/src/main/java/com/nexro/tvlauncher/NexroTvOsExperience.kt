@@ -47,7 +47,6 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
     private val clockTick = object : Runnable {
         override fun run() {
             if (::clockText.isInitialized && page == "Home") {
-                val is24 = android.text.format.DateFormat.is24HourFormat(a)
                 clockText.text = currentTime()
                 clockText.invalidate()
                 dateText.text = SimpleDateFormat("EEE, d MMM", Locale.getDefault()).format(Date())
@@ -57,6 +56,8 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
     }
 
     private data class Item(val name: String, val pkg: String, val icon: Drawable, val system: Boolean)
+
+    fun dispose() { clockHandler.removeCallbacks(clockTick) }
 
     fun render() {
         loadApps()
@@ -104,6 +105,13 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
             else -> buildHome()
         }
         a.setContentView(root)
+        root.post {
+            if (page == "Home" && ::dockRow.isInitialized && dockRow.childCount > 0) {
+                dockRow.getChildAt(selectedIndex.coerceIn(0, dockRow.childCount - 1)).requestFocus()
+            } else {
+                root.requestFocus()
+            }
+        }
     }
 
     private fun buildHome() {
