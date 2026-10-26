@@ -124,13 +124,7 @@ class MainActivity : Activity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        when (keyCode) {
-            KeyEvent.KEYCODE_DPAD_LEFT -> { move("left"); return true }
-            KeyEvent.KEYCODE_DPAD_RIGHT -> { move("right"); return true }
-            KeyEvent.KEYCODE_DPAD_UP -> { move("up"); return true }
-            KeyEvent.KEYCODE_DPAD_DOWN -> { move("down"); return true }
-            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> { launchApp(selected); return true }
-        }
+        if (tvOsExperience?.handleKeyCode(keyCode) == true) return true
         return super.onKeyDown(keyCode, event)
     }
 
