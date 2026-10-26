@@ -407,6 +407,7 @@ private class TvBridge(private val activity: MainActivity, private val report: (
                 }
                 val body = JSONObject(String(bytes, 0, offset, Charsets.UTF_8).ifBlank { "{}" })
                 if (method == "OPTIONS") { respond(s, 200, JSONObject().put("ok", true)); return }
+                if (method == "GET" && (path == "/" || path == "/index.html")) { respondHtml(s); return }
                 val auth = headers["authorization"]?.removePrefix("Bearer ")
                 val result = when {
                     method == "GET" && path == "/api/health" -> JSONObject().put("ok", true).put("service", "Nexro TV Launcher Bridge")
@@ -425,6 +426,12 @@ private class TvBridge(private val activity: MainActivity, private val report: (
                 try { respond(s, 400, JSONObject().put("error", "Malformed request.")) } catch (_: Exception) {}
             }
         }
+    }
+
+    private fun respondHtml(s: java.net.Socket) {
+        val data = activity.assets.open("index.html").bufferedReader(Charsets.UTF_8).use { it.readText() }.toByteArray(Charsets.UTF_8)
+        val header = "HTTP/1.1 200 OK\\r\\nContent-Type: text/html; charset=utf-8\\r\\nCache-Control: no-store\\r\\nConnection: close\\r\\nContent-Length: ${data.size}\\r\\n\\r\\n"
+        s.getOutputStream().apply { write(header.toByteArray(Charsets.UTF_8)); write(data); flush() }
     }
 
     private fun respond(s: java.net.Socket, code: Int, json: JSONObject) {
