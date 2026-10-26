@@ -63,7 +63,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val Context.launcherStore by preferencesDataStore(name = "vise_launcher_settings")
+private val Context.launcherStore by preferencesDataStore(name = "nexro_launcher_settings")
 private val KEY_THEME = stringPreferencesKey("theme")
 private val KEY_ICON_SIZE = stringPreferencesKey("icon_size")
 private val KEY_CORNERS = stringPreferencesKey("corners")
@@ -145,7 +145,7 @@ fun TvLauncherRoot(onOpenRemote: () -> Unit = {}) {
                 Spacer(Modifier.width(20.dp))
                 Text("◉", color = theme.textSecondary, fontSize = 20.sp)
                 Spacer(Modifier.width(8.dp))
-                Text("VISE", color = theme.textSecondary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Text("NEXRO", color = theme.textSecondary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             }
             Spacer(Modifier.weight(1f))
             Text("Your apps", color = theme.textSecondary, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
@@ -345,7 +345,7 @@ private fun SettingsPanel(
                     "Wallpaper" -> listOf("Solid", "Blurred").forEach { v ->
                         SettingsRow(if (prefs.wallpaper == v) "✓" else "▧", v, if (prefs.wallpaper == v) "Selected" else "", colors, onClick = { onWallpaper(v) })
                     }
-                    "About" -> Text("VISE TV Launcher\nVersion 1.2.0\nOriginal design for Android TV.", color = colors.textSecondary, fontSize = 16.sp)
+                    "About" -> Text("Nexro TV Launcher\nVersion 1.2.0\nOriginal design for Android TV.", color = colors.textSecondary, fontSize = 16.sp)
                 }
             }
         }
