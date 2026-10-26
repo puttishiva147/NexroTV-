@@ -209,61 +209,58 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
     }
 
     private fun dockItem(item: Item, index: Int): View {
+        val style = prefs.getString("icon_style", "Squircle") ?: "Squircle"
+        val size = when (prefs.getString("icon_size", "Medium")) {
+            "Small" -> 52
+            "Large" -> 76
+            else -> 64
+        }
         val tile = LinearLayout(a).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
             isFocusable = true
             isFocusableInTouchMode = true
-            setPadding(dp(5), dp(3), dp(5), dp(3))
+            isClickable = true
+            clipChildren = false
+            clipToPadding = false
+            setPadding(dp(7), dp(7), dp(7), dp(8))
             background = tileBackground(false)
+            elevation = dp(6).toFloat()
+            translationZ = dp(1).toFloat()
         }
-        val size = when (prefs.getString("icon_size", "Medium")) {
-            "Small" -> 48
-            "Large" -> 72
-            else -> 60
-        }
-        val style = prefs.getString("icon_style", "Squircle") ?: "Squircle"
         val iconFrame = FrameLayout(a).apply {
             background = when (style) {
                 "Rounded" -> GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                    intArrayOf(Color.argb(112, 54, 67, 91), Color.argb(88, 14, 20, 33))).apply {
-                    cornerRadius = dp(15).toFloat()
-                    setStroke(dp(1), Color.argb(55, 255, 255, 255))
+                    intArrayOf(Color.rgb(250, 251, 255), Color.rgb(218, 226, 240))).apply {
+                    cornerRadius = dp(17).toFloat()
+                    setStroke(dp(1), Color.argb(90, 255, 255, 255))
                 }
                 "Glass" -> GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                    intArrayOf(Color.argb(92, 160, 184, 220), Color.argb(48, 30, 43, 66))).apply {
-                    cornerRadius = dp(20).toFloat()
-                    setStroke(dp(1), Color.argb(110, 230, 240, 255))
+                    intArrayOf(Color.argb(205, 190, 211, 245), Color.argb(105, 62, 81, 112))).apply {
+                    cornerRadius = dp(21).toFloat()
+                    setStroke(dp(1), Color.argb(150, 238, 246, 255))
                 }
                 "Minimal" -> GradientDrawable().apply {
-                    cornerRadius = dp(16).toFloat()
+                    cornerRadius = dp(17).toFloat()
                     setColor(Color.TRANSPARENT)
                     setStroke(dp(1), Color.argb(150, 220, 232, 255))
                 }
                 else -> GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                    intArrayOf(Color.argb(105, 44, 57, 80), Color.argb(80, 12, 18, 31))).apply {
-                    cornerRadius = dp(21).toFloat()
-                    setStroke(dp(1), Color.argb(45, 255, 255, 255))
+                    intArrayOf(Color.rgb(245, 247, 252), Color.rgb(213, 222, 237))).apply {
+                    cornerRadius = dp(19).toFloat()
+                    setStroke(dp(1), Color.argb(105, 255, 255, 255))
                 }
             }
             clipToOutline = true
-            outlineProvider = if (style == "Rounded") ViewOutlineProvider.BACKGROUND else iconOutline()
+            outlineProvider = ViewOutlineProvider.BACKGROUND
+            elevation = dp(3).toFloat()
         }
         val icon = ImageView(a).apply {
             setImageDrawable(item.icon)
             scaleType = ImageView.ScaleType.FIT_CENTER
             contentDescription = item.name
-            val inset = when (prefs.getString("icon_style", "Squircle")) {
-                "Minimal" -> dp(2)
-                else -> dp(6)
-            }
+            val inset = if (style == "Minimal") dp(1) else dp(5)
             setPadding(inset, inset, inset, inset)
-            if (prefs.getString("icon_style", "Squircle") == "Glass") {
-                background = GradientDrawable().apply {
-                    cornerRadius = dp(18).toFloat()
-                    setColor(Color.argb(28, 255, 255, 255))
-                }
-            }
         }
         iconFrame.addView(icon, FrameLayout.LayoutParams(-1, -1))
         tile.addView(iconFrame, LinearLayout.LayoutParams(dp(size), dp(size)))
@@ -271,19 +268,23 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
             gravity = Gravity.CENTER
             maxLines = 1
             ellipsize = android.text.TextUtils.TruncateAt.END
-            setPadding(dp(2), dp(7), dp(2), 0)
+            setPadding(dp(2), dp(8), dp(2), dp(1))
         }, LinearLayout.LayoutParams(-1, -2))
         tile.setOnFocusChangeListener { view, focused ->
             view.background = tileBackground(focused)
-            val scale = if (focused && motion()) 1.055f else 1f
-            view.animate().scaleX(scale).scaleY(scale).setDuration(if (motion()) 170L else 0L).start()
+            view.elevation = dp(if (focused) 18 else 6).toFloat()
+            view.translationZ = dp(if (focused) 10 else 1).toFloat()
+            iconFrame.elevation = dp(if (focused) 10 else 3).toFloat()
+            val scale = if (focused && motion()) 1.075f else 1f
+            view.animate().cancel()
+            view.animate().scaleX(scale).scaleY(scale)
+                .setDuration(if (motion()) 180L else 0L).start()
             if (focused) selectedIndex = index
         }
         tile.setOnClickListener { launch(item) }
         tile.setOnLongClickListener { appActions(item); true }
         return tile
     }
-
 
     /** Main launcher settings. Icon styling is a separate destination, never the Settings home. */
     private fun buildSettings() {
