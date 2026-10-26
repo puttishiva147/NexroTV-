@@ -128,7 +128,7 @@ class MainActivity : Activity() {
         return super.onKeyDown(keyCode, event)
     }
 
-    override fun onDestroy() { bridge.stop(); super.onDestroy() }
+    override fun onDestroy() { tvOsExperience?.dispose(); bridge.stop(); super.onDestroy() }
 }
 
 private class TvBridge(private val activity: MainActivity, private val report: (String) -> Unit) {
