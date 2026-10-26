@@ -55,15 +55,90 @@ class MainActivity : Activity() {
     }
 
     private fun showRemoteSettings() {
-        val details = "Optional phone remote\\n\\nPIN: ${bridge.pin}\\nTV address: ${localIp()}:8765\\n\\nOpen this address on a phone connected to the same Wi-Fi network. Pairing is optional."
-        android.app.AlertDialog.Builder(this)
-            .setTitle("Phone remote")
-            .setMessage(details)
+        val density = resources.displayMetrics.density
+        fun dp(value: Int) = (value * density).toInt().coerceAtLeast(1)
+        fun label(value: String, size: Float, color: Int, bold: Boolean = false) = TextView(this).apply {
+            text = value
+            textSize = size
+            setTextColor(color)
+            if (bold) typeface = Typeface.create("sans-serif", Typeface.BOLD)
+            includeFontPadding = false
+        }
+        val background = Color.rgb(17, 21, 31)
+        val primary = Color.rgb(245, 248, 255)
+        val secondary = Color.rgb(164, 176, 198)
+        val accent = Color.rgb(154, 197, 255)
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(26), dp(10), dp(26), dp(8))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(background)
+                cornerRadius = dp(24).toFloat()
+                setStroke(dp(1), Color.rgb(53, 66, 88))
+            }
+        }
+        content.addView(label("Connect your phone to Nexro TV", 22f, primary, true),
+            LinearLayout.LayoutParams(-1, -2))
+        content.addView(label("Use the same Wi-Fi network on both devices.", 14f, secondary).apply {
+            setPadding(0, dp(8), 0, dp(18))
+        }, LinearLayout.LayoutParams(-1, -2))
+
+        fun infoCard(title: String, value: String, hint: String): LinearLayout {
+            val card = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(16), dp(12), dp(16), dp(12))
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(Color.rgb(25, 31, 44))
+                    cornerRadius = dp(16).toFloat()
+                    setStroke(dp(1), Color.rgb(55, 69, 93))
+                }
+            }
+            card.addView(label(title.uppercase(), 11f, secondary, true))
+            card.addView(label(value, 22f, primary, true).apply {
+                setPadding(0, dp(7), 0, dp(5))
+                setTextIsSelectable(true)
+            })
+            card.addView(label(hint, 12f, secondary))
+            return card
+        }
+
+        val address = "${localIp()}:8765"
+        val pin = bridge.pin
+        content.addView(infoCard("TV ADDRESS", address, "Enter this in the phone browser"),
+            LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
+        content.addView(infoCard("PAIRING PIN", pin, "A new PIN revokes previous pairing sessions"),
+            LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
+
+        content.addView(label("1. Open the TV address on your phone.\n2. Enter the 6-digit PIN to pair.\n3. Keep both devices on the same Wi-Fi.", 14f, primary).apply {
+            setLineSpacing(dp(4).toFloat(), 1f)
+            setPadding(0, 0, 0, dp(12))
+        }, LinearLayout.LayoutParams(-1, -2))
+
+        val dialog = android.app.AlertDialog.Builder(this)
+            .setView(content)
             .setNegativeButton("Close", null)
-            .setNeutralButton("New PIN") { _, _ -> bridge.rotatePin(); showRemoteSettings() }
-            .setPositiveButton("Open remote on this TV") { _, _ ->
-                try { startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("http://127.0.0.1:8765/"))) } catch (_: Exception) {}
-            }.show()
+            .setNeutralButton("New PIN", null)
+            .setPositiveButton("Copy address", null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_NEUTRAL)?.setOnClickListener {
+                bridge.rotatePin()
+                dialog.dismiss()
+                showRemoteSettings()
+            }
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)?.setOnClickListener {
+                try {
+                    val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Nexro TV address", "http://$address/"))
+                    android.widget.Toast.makeText(this, "TV address copied", android.widget.Toast.LENGTH_SHORT).show()
+                } catch (_: Exception) {
+                    android.widget.Toast.makeText(this, "Could not copy address", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.72f).toInt(), -2)
     }
 
     private lateinit var remotePanel: LinearLayout
