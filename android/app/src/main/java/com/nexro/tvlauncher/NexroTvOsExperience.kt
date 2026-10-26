@@ -48,9 +48,7 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
         override fun run() {
             if (::clockText.isInitialized && page == "Home") {
                 val is24 = android.text.format.DateFormat.is24HourFormat(a)
-                clockText.text = SimpleDateFormat(if (is24) "HH:mm" else "h:mm", Locale.getDefault()).format(Date())
-                val suffix = if (is24) "" else " " + SimpleDateFormat("a", Locale.getDefault()).format(Date())
-                clockText.tag = suffix
+                clockText.text = currentTime()
                 clockText.invalidate()
                 dateText.text = SimpleDateFormat("EEE, d MMM", Locale.getDefault()).format(Date())
             }
@@ -498,13 +496,36 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
         return JSONObject().put("ok", ok).put("executed", ok).put("simulated", false).put("action", action).put("message", message)
     }
 
+    fun handleKeyCode(keyCode: Int): Boolean {
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_LEFT -> { if (page == "Home") moveFocus("left") else return false; return true }
+            KeyEvent.KEYCODE_DPAD_RIGHT -> { if (page == "Home") moveFocus("right") else return false; return true }
+            KeyEvent.KEYCODE_DPAD_UP -> {
+                if (page == "Home") { show("Settings"); return true }
+                return false
+            }
+            KeyEvent.KEYCODE_DPAD_DOWN -> {
+                if (page == "Home") { show("Apps"); return true }
+                return false
+            }
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                root.findFocus()?.performClick()
+                return true
+            }
+            KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_ESCAPE -> {
+                if (page != "Home") { show("Home"); return true }
+                return false
+            }
+        }
+        return false
+    }
+
     private fun moveFocus(action: String) {
         if (!::dockRow.isInitialized || dockRow.childCount == 0) return
         val n = dockRow.childCount
         selectedIndex = when (action) {
             "left" -> (selectedIndex - 1 + n) % n
             "right" -> (selectedIndex + 1) % n
-            "up" -> root.findFocus()?.let { it.clearFocus(); it }?.let { selectedIndex } ?: selectedIndex
             else -> selectedIndex
         }.coerceIn(0, n - 1)
         dockRow.getChildAt(selectedIndex)?.requestFocus()
