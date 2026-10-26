@@ -137,49 +137,99 @@ fun TvLauncherRoot(onOpenRemote: () -> Unit = {}) {
                 Brush.linearGradient(listOf(theme.background, theme.panel, theme.background))
             ))
         }
-        Column(Modifier.fillMaxSize().padding(start = 48.dp, end = 48.dp, top = 32.dp, bottom = 45.dp)) {
-            Row(Modifier.fillMaxWidth().height(48.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(currentTime, color = theme.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+        // Cinematic Nexro home: brand at upper-left, glass controls, oversized clock,
+        // and a floating app dock anchored to the bottom edge.
+        Box(Modifier.fillMaxSize().background(
+            Brush.linearGradient(
+                colorStops = arrayOf(
+                    0.0f to Color(0xFF071426),
+                    0.28f to Color(0xFF10131E),
+                    0.48f to Color(0xFF3B241F),
+                    0.64f to Color(0xFF080E19),
+                    1.0f to Color(0xFF05080F)
+                ),
+                start = androidx.compose.ui.geometry.Offset.Zero,
+                end = androidx.compose.ui.geometry.Offset.Infinite
+            )
+        ))
+        // Soft atmospheric light bands to give the wallpaper depth without an external asset.
+        Box(Modifier.fillMaxWidth(0.88f).height(210.dp).offset(x = (-90).dp, y = 80.dp)
+            .clip(RoundedCornerShape(100)).background(
+                Brush.horizontalGradient(listOf(Color(0x001A3151), Color(0xFF233B59).copy(alpha = 0.45f), Color(0x00D6A17A)))
+            ))
+        Box(Modifier.fillMaxWidth(0.68f).height(180.dp).align(Alignment.CenterEnd).offset(x = 70.dp, y = (-90).dp)
+            .clip(RoundedCornerShape(100)).background(
+                Brush.linearGradient(listOf(Color(0xFF183D6A).copy(alpha = 0.6f), Color(0x00D9A57D), Color(0x55D5A078)))
+            ))
+        Column(Modifier.fillMaxSize().padding(start = 48.dp, end = 48.dp, top = 24.dp, bottom = 28.dp)) {
+            Row(Modifier.fillMaxWidth().height(54.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text("nexro", color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1.2).sp)
+                    Spacer(Modifier.width(10.dp))
+                    Text("TV", color = Color(0xFFB9C7DF), fontSize = 23.sp, fontWeight = FontWeight.Light)
+                }
                 Spacer(Modifier.weight(1f))
-                Text("●", color = theme.accent, fontSize = 13.sp)
-                Spacer(Modifier.width(20.dp))
-                Text("◉", color = theme.textSecondary, fontSize = 20.sp)
-                Spacer(Modifier.width(8.dp))
-                Text("NEXRO", color = theme.textSecondary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-            }
-            Spacer(Modifier.weight(1f))
-            Text("Your apps", color = theme.textSecondary, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(24.dp))
-            if (apps.isEmpty()) {
-                Text("No launchable apps found on this TV.", color = theme.textPrimary, fontSize = 18.sp)
-            } else {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(32.dp),
-                    contentPadding = PaddingValues(start = 8.dp, end = 48.dp, top = 24.dp, bottom = 40.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Row(
+                    Modifier.clip(CircleShape)
+                        .background(Brush.horizontalGradient(listOf(Color(0xCC899AB4), Color(0x883E526E), Color(0xAA101B2C))))
+                        .border(1.dp, Color.White.copy(alpha = 0.18f), CircleShape)
+                        .padding(horizontal = 12.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    itemsIndexed(apps, key = { _, app -> app.packageName }) { index, app ->
-                        AppTile(
-                            app = app, colors = theme, size = prefs.iconSize, corners = prefs.corners,
-                            labels = prefs.labels, parallax = prefs.parallax && !prefs.reduceEffects,
-                            reduceEffects = prefs.reduceEffects, first = index == 0,
-                            requester = if (index == 0) firstAppFocus else null,
-                            onClick = {
-                                runCatching {
-                                    context.packageManager.getLaunchIntentForPackage(app.packageName)?.let(context::startActivity)
-                                }
-                            }
-                        )
+                    LauncherButton("⌕", theme, Modifier.width(42.dp)) {
+                        runCatching { context.startActivity(Intent("android.search.action.GLOBAL_SEARCH").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                            .onFailure { settingsOpen = true }
                     }
+                    LauncherButton("⚙", theme, Modifier.width(42.dp)) { settingsSection = null; settingsOpen = true }
+                    LauncherButton("⌁", theme, Modifier.width(42.dp)) {
+                        runCatching { context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                    }
+                    Text(currentTime, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    LauncherButton("●", theme, Modifier.width(42.dp)) { settingsSection = "About"; settingsOpen = true }
                 }
             }
+            Spacer(Modifier.height(126.dp))
+            Text(SimpleDateFormat("EEE, d MMM", Locale.getDefault()).format(Date()),
+                color = Color(0xFFB8C5DA), fontSize = 22.sp, fontWeight = FontWeight.Medium)
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(SimpleDateFormat("h:mm", Locale.getDefault()).format(Date()),
+                    color = Color.White, fontSize = 76.sp, fontWeight = FontWeight.Light, letterSpacing = (-2).sp)
+                Spacer(Modifier.width(12.dp))
+                Text(SimpleDateFormat("a", Locale.getDefault()).format(Date()),
+                    color = Color(0xFF93A3BD), fontSize = 31.sp, modifier = Modifier.padding(bottom = 12.dp))
+            }
             Spacer(Modifier.weight(1f))
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Press OK to open an app", color = theme.textSecondary, fontSize = 13.sp)
-                Spacer(Modifier.weight(1f))
-                LauncherButton("Settings", theme, Modifier.width(150.dp)) {
-                    settingsSection = null
-                    settingsOpen = true
+            Box(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(34.dp))
+                    .background(Brush.verticalGradient(listOf(Color(0x887C8CA3), Color(0x553F4D61), Color(0x88434D5B))))
+                    .border(1.dp, Color.White.copy(alpha = 0.22f), RoundedCornerShape(34.dp))
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
+            ) {
+                if (apps.isEmpty()) {
+                    Text("No launchable apps found on this TV.", color = Color.White, fontSize = 18.sp,
+                        modifier = Modifier.padding(20.dp))
+                } else {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(18.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        itemsIndexed(apps, key = { _, app -> app.packageName }) { index, app ->
+                            AppTile(
+                                app = app, colors = theme, size = "S", corners = "24",
+                                labels = "Always", parallax = prefs.parallax && !prefs.reduceEffects,
+                                reduceEffects = prefs.reduceEffects, first = index == 0,
+                                requester = if (index == 0) firstAppFocus else null,
+                                onClick = {
+                                    runCatching {
+                                        context.packageManager.getLaunchIntentForPackage(app.packageName)?.let(context::startActivity)
+                                    }
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -245,8 +295,8 @@ private fun AppTile(
         animationSpec = tween(220),
         label = "tileShine"
     )
-    val width = when (size) { "S" -> 200.dp; "L" -> 280.dp; else -> 240.dp }
-    val height = when (size) { "S" -> 120.dp; "L" -> 168.dp; else -> 144.dp }
+    val width = when (size) { "S" -> 142.dp; "L" -> 180.dp; else -> 160.dp }
+    val height = when (size) { "S" -> 92.dp; "L" -> 112.dp; else -> 100.dp }
     val radius = when (corners) { "8" -> 8.dp; "24" -> 24.dp; else -> 16.dp }
     val tileShape = RoundedCornerShape(radius)
     val focusModifier = if (requester != null) Modifier.focusRequester(requester) else Modifier
@@ -272,7 +322,7 @@ private fun AppTile(
             .semantics { contentDescription = "${app.name}, button" }
     ) {
         Box(Modifier.fillMaxWidth().height(height), contentAlignment = Alignment.Center) {
-            Image(bitmap = app.icon, contentDescription = null, modifier = Modifier.fillMaxSize().padding(20.dp), contentScale = ContentScale.Fit)
+            Image(bitmap = app.icon, contentDescription = null, modifier = Modifier.fillMaxSize().padding(18.dp), contentScale = ContentScale.Fit)
             if (shineAlpha > 0f) {
                 Box(Modifier.fillMaxSize().background(
                     Brush.linearGradient(listOf(Color.White.copy(alpha = 0f), Color.White.copy(alpha = shineAlpha), Color.White.copy(alpha = 0f)))
@@ -426,7 +476,7 @@ private fun loadInstalledApps(context: Context): List<InstalledApp> {
         val pkg = info.activityInfo.packageName
         if (pkg == context.packageName || !seen.add(pkg)) return@mapNotNull null
         runCatching {
-            val drawable = try { info.activityInfo.loadBanner(pm) ?: info.loadIcon(pm) } catch (_: Exception) { info.loadIcon(pm) }
+            val drawable = try { info.loadIcon(pm) } catch (_: Exception) { info.activityInfo.loadBanner(pm) ?: info.loadIcon(pm) }
             InstalledApp(info.loadLabel(pm).toString(), pkg, drawableToBitmap(drawable).asImageBitmap())
         }.getOrNull()
     }.sortedBy { it.name.lowercase(Locale.getDefault()) }
