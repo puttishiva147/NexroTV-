@@ -430,7 +430,7 @@ private class TvBridge(private val activity: MainActivity, private val report: (
     private fun respond(s: java.net.Socket, code: Int, json: JSONObject) {
         val data = json.toString().toByteArray(Charsets.UTF_8)
         val reason = when (code) { 200 -> "OK"; 400 -> "Bad Request"; 401 -> "Unauthorized"; 422 -> "Unprocessable Entity"; else -> "Error" }
-        val header = "HTTP/1.1 $code $reason\r\nContent-Type: application/json; charset=utf-8\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type, Authorization\r\nAccess-Control-Allow-Methods: GET, POST, OPTIONS\r\nConnection: close\r\nContent-Length: ${data.size}\r\n\r\n"
+        val header = "HTTP/1.1 $code $reason\r\nContent-Type: application/json; charset=utf-8\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type, Authorization\r\nAccess-Control-Allow-Private-Network: true\r\nAccess-Control-Allow-Methods: GET, POST, OPTIONS\r\nConnection: close\r\nContent-Length: ${data.size}\r\n\r\n"
         s.getOutputStream().apply { write(header.toByteArray(Charsets.UTF_8)); write(data); flush() }
     }
 }
