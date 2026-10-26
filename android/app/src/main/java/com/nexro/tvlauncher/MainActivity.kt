@@ -318,7 +318,7 @@ private class TvBridge(private val activity: MainActivity, private val report: (
                 val auth = headers["authorization"]?.removePrefix("Bearer ")
                 val result = when {
                     method == "GET" && path == "/api/health" -> JSONObject().put("ok", true).put("service", "Nexro TV Launcher Bridge")
-                    method == "POST" && path == "/api/pair" -> if (body.optString("pin") == pin) {
+                    method == "POST" && path == "/api/pair" -> if (normalizePin(body.opt("pin")) == pin) {
                         token = java.util.UUID.randomUUID().toString() + java.util.UUID.randomUUID().toString()
                         isPaired = true
                         report("Phone remote connected.")
@@ -336,6 +336,8 @@ private class TvBridge(private val activity: MainActivity, private val report: (
             }
         }
     }
+
+    private fun normalizePin(value: Any?): String = value?.toString()?.trim()?.filter { it.isDigit() }.orEmpty()
 
     private fun respondHtml(s: java.net.Socket) {
         val data = activity.assets.open("index.html").bufferedReader(Charsets.UTF_8).use { it.readText() }.toByteArray(Charsets.UTF_8)
