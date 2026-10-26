@@ -1,5 +1,7 @@
 package com.nexro.tvlauncher
 
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -27,7 +29,7 @@ import java.security.SecureRandom
 import java.util.Collections
 import kotlin.concurrent.thread
 
-class MainActivity : Activity() {
+class MainActivity : ComponentActivity() {
     private val bg = Color.rgb(8, 10, 15)
     private val panel = Color.rgb(18, 22, 31)
     private val tile = Color.rgb(26, 32, 44)
@@ -68,8 +70,7 @@ class MainActivity : Activity() {
     }
 
     private fun render() {
-        tvOsExperience = NexroTvOsExperience(this) { showRemoteSettings() }
-        tvOsExperience!!.render()
+        setContent { TvLauncherRoot(onOpenRemote = { showRemoteSettings() }) }
         bridge.start()
     }
 
@@ -252,11 +253,10 @@ class MainActivity : Activity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (tvOsExperience?.handleKeyCode(keyCode) == true) return true
         return super.onKeyDown(keyCode, event)
     }
 
-    override fun onDestroy() { tvOsExperience?.dispose(); bridge.stop(); super.onDestroy() }
+    override fun onDestroy() { bridge.stop(); super.onDestroy() }
 }
 
 private class TvBridge(private val activity: MainActivity, private val report: (String) -> Unit) {
