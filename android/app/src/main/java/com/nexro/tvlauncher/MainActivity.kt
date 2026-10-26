@@ -39,13 +39,29 @@ class MainActivity : Activity() {
     private val tiles = mutableListOf<View>()
     private var selected = 0
     private var tvOsExperience: NexroTvOsExperience? = null
+    private var remoteDialog: android.app.AlertDialog? = null
+    private var firstLaunchRemotePromptShown = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-        bridge = TvBridge(this) { msg -> runOnUiThread { if (::status.isInitialized) status.text = msg } }
+        bridge = TvBridge(this) { msg ->
+            runOnUiThread {
+                if (::status.isInitialized) status.text = msg
+                if (msg == "Phone remote connected.") {
+                    remoteDialog?.dismiss()
+                    remoteDialog = null
+                    android.widget.Toast.makeText(this, "Phone remote connected", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
         render()
         bridge.start()
+        if (!getPreferences(MODE_PRIVATE).getBoolean("remote_setup_prompt_seen", false)) {
+            firstLaunchRemotePromptShown = true
+            getPreferences(MODE_PRIVATE).edit().putBoolean("remote_setup_prompt_seen", true).apply()
+            window.decorView.postDelayed({ if (!isFinishing && firstLaunchRemotePromptShown) showRemoteSettings() }, 700)
+        }
     }
 
     private fun render() {
@@ -55,6 +71,7 @@ class MainActivity : Activity() {
     }
 
     private fun showRemoteSettings() {
+        if (isFinishing) return
         val density = resources.displayMetrics.density
         fun dp(value: Int) = (value * density).toInt().coerceAtLeast(1)
         fun label(value: String, size: Float, color: Int, bold: Boolean = false) = TextView(this).apply {
@@ -67,21 +84,23 @@ class MainActivity : Activity() {
         val background = Color.rgb(17, 21, 31)
         val primary = Color.rgb(245, 248, 255)
         val secondary = Color.rgb(164, 176, 198)
-        val accent = Color.rgb(154, 197, 255)
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(26), dp(10), dp(26), dp(8))
+            setPadding(dp(26), dp(14), dp(26), dp(14))
             background = android.graphics.drawable.GradientDrawable().apply {
                 setColor(background)
                 cornerRadius = dp(24).toFloat()
                 setStroke(dp(1), Color.rgb(53, 66, 88))
             }
         }
-        content.addView(label("Connect your phone to Nexro TV", 22f, primary, true),
+        val connected = bridge.isPaired
+        content.addView(label(if (connected) "Phone Remote Connected" else "Connect your phone to Nexro TV", 22f, primary, true),
             LinearLayout.LayoutParams(-1, -2))
-        content.addView(label("Use the same Wi-Fi network on both devices.", 14f, secondary).apply {
-            setPadding(0, dp(8), 0, dp(18))
-        }, LinearLayout.LayoutParams(-1, -2))
+        content.addView(label(
+            if (connected) "Your phone is paired. You can remove this connection below or pair again later."
+            else "Use the same Wi-Fi network on your TV and phone.",
+            14f, secondary
+        ).apply { setPadding(0, dp(8), 0, dp(18)) }, LinearLayout.LayoutParams(-1, -2))
 
         fun infoCard(title: String, value: String, hint: String): LinearLayout {
             val card = LinearLayout(this).apply {
@@ -103,36 +122,58 @@ class MainActivity : Activity() {
         }
 
         val address = "${localIp()}:8765"
-        val pin = bridge.pin
-        content.addView(infoCard("TV ADDRESS", address, "Enter this in the phone browser"),
-            LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
-        content.addView(infoCard("PAIRING PIN", pin, "A new PIN revokes previous pairing sessions"),
-            LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
+        if (!connected) {
+            content.addView(infoCard("TV ADDRESS", address, "Enter this address in the phone browser"),
+                LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
+            content.addView(infoCard("PAIRING PIN", bridge.pin, "Six digits; only share with your own phone"),
+                LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
+            content.addView(label("1. Open http://$address on your phone.\n2. Enter the 6-digit PIN.\n3. Stay on the same Wi-Fi network.", 14f, primary).apply {
+                setLineSpacing(dp(4).toFloat(), 1f)
+                setPadding(0, 0, 0, dp(12))
+            }, LinearLayout.LayoutParams(-1, -2))
+        } else {
+            content.addView(infoCard("STATUS", "Connected", "This phone has an active pairing session"),
+                LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
+        }
 
-        content.addView(label("1. Open the TV address on your phone.\n2. Enter the 6-digit PIN to pair.\n3. Keep both devices on the same Wi-Fi.", 14f, primary).apply {
-            setLineSpacing(dp(4).toFloat(), 1f)
-            setPadding(0, 0, 0, dp(12))
-        }, LinearLayout.LayoutParams(-1, -2))
-
-        val dialog = android.app.AlertDialog.Builder(this)
-            .setView(content)
-            .setNegativeButton("Close", null)
-            .setNeutralButton("New PIN", null)
-            .setPositiveButton("Copy address", null)
-            .create()
+        val builder = android.app.AlertDialog.Builder(this).setView(content)
+        if (connected) {
+            builder.setNegativeButton("Close", null)
+                .setNeutralButton("Remove Connection", null)
+                .setPositiveButton("Connect another", null)
+        } else {
+            builder.setNegativeButton("Not now", null)
+                .setNeutralButton("New PIN", null)
+                .setPositiveButton("Copy address", null)
+        }
+        val dialog = builder.create()
+        remoteDialog = dialog
+        dialog.setOnDismissListener { if (remoteDialog === dialog) remoteDialog = null }
         dialog.setOnShowListener {
             dialog.getButton(android.app.AlertDialog.BUTTON_NEUTRAL)?.setOnClickListener {
-                bridge.rotatePin()
-                dialog.dismiss()
-                showRemoteSettings()
+                if (connected) {
+                    bridge.removePairing()
+                    dialog.dismiss()
+                    showRemoteSettings()
+                } else {
+                    bridge.rotatePin()
+                    dialog.dismiss()
+                    showRemoteSettings()
+                }
             }
             dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)?.setOnClickListener {
-                try {
-                    val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Nexro TV address", "http://$address/"))
-                    android.widget.Toast.makeText(this, "TV address copied", android.widget.Toast.LENGTH_SHORT).show()
-                } catch (_: Exception) {
-                    android.widget.Toast.makeText(this, "Could not copy address", android.widget.Toast.LENGTH_SHORT).show()
+                if (connected) {
+                    dialog.dismiss()
+                    bridge.removePairing()
+                    showRemoteSettings()
+                } else {
+                    try {
+                        val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Nexro TV address", "http://$address/"))
+                        android.widget.Toast.makeText(this, "TV address copied", android.widget.Toast.LENGTH_SHORT).show()
+                    } catch (_: Exception) {
+                        android.widget.Toast.makeText(this, "Could not copy address", android.widget.Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -210,11 +251,14 @@ private class TvBridge(private val activity: MainActivity, private val report: (
     @Volatile var pin: String = newPin()
         private set
     @Volatile private var token: String? = null
+    @Volatile var isPaired: Boolean = false
+        private set
     @Volatile private var socket: ServerSocket? = null
     @Volatile private var running = false
     private fun newPin() = (100000 + SecureRandom().nextInt(900000)).toString()
 
-    fun rotatePin() { pin = newPin(); token = null; report("New PIN generated; previous phone sessions revoked.") }
+    fun rotatePin() { pin = newPin(); token = null; isPaired = false; report("New PIN generated; previous phone sessions revoked.") }
+    fun removePairing() { token = null; isPaired = false; report("Phone remote connection removed.") }
     fun start() {
         if (running) return
         running = true
@@ -276,6 +320,8 @@ private class TvBridge(private val activity: MainActivity, private val report: (
                     method == "GET" && path == "/api/health" -> JSONObject().put("ok", true).put("service", "Nexro TV Launcher Bridge")
                     method == "POST" && path == "/api/pair" -> if (body.optString("pin") == pin) {
                         token = java.util.UUID.randomUUID().toString() + java.util.UUID.randomUUID().toString()
+                        isPaired = true
+                        report("Phone remote connected.")
                         JSONObject().put("ok", true).put("token", token).put("capabilities", JSONObject().put("volume", true).put("navigation", true).put("apps", true).put("media", true).put("power", false))
                     } else {
                         respond(s, 401, JSONObject().put("error", "Incorrect TV pairing PIN.")); return
