@@ -189,7 +189,7 @@ class MainActivity : Activity() {
         }
         scroll.addView(grid)
         appPanel.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-        body.addView(appPanel, LinearLayout.LayoutParams(0, 0, 1.7f).apply { marginEnd = 18 })
+        body.addView(appPanel, LinearLayout.LayoutParams(0, -1, 1.7f).apply { marginEnd = 18 })
 
         val pair = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
