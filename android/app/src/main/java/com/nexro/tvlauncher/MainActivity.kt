@@ -48,71 +48,123 @@ class MainActivity : Activity() {
     }
 
     private fun render() {
+        // tvOS-inspired experience: cinematic hero, top navigation, oversized app artwork.
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(44, 28, 44, 28)
-            setBackgroundColor(bg)
+            setPadding(58, 26, 58, 22)
+            setBackgroundColor(Color.rgb(5, 7, 12))
             isFocusable = true
             isFocusableInTouchMode = true
         }
-        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        header.addView(TextView(this).apply {
-            text = "NEXRO"
-            textSize = 27f
-            letterSpacing = .12f
-            setTextColor(mint)
+        val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        top.addView(TextView(this).apply {
+            text = "nexro"
+            textSize = 30f
+            letterSpacing = -.04f
+            setTextColor(white)
             typeface = Typeface.create("sans-serif", Typeface.BOLD)
         })
-        header.addView(TextView(this).apply {
+        top.addView(TextView(this).apply {
             text = "  TV"
-            textSize = 27f
-            setTextColor(white)
+            textSize = 19f
+            setTextColor(Color.rgb(170, 178, 195))
             typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
         })
-        header.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
-        header.addView(TextView(this).apply {
-            text = "●  ANDROID TV"
-            textSize = 11f
-            letterSpacing = .08f
-            setTextColor(mint)
-            setPadding(15, 9, 15, 9)
-            background = rounded(Color.rgb(18, 38, 39), 24)
+        top.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+        val nav = listOf("Watch Now", "Movies", "TV Shows", "Sports", "Library")
+        nav.forEachIndexed { i, label ->
+            top.addView(TextView(this).apply {
+                text = label
+                textSize = 14f
+                setTextColor(if (i == 0) white else Color.rgb(157, 165, 181))
+                typeface = Typeface.create("sans-serif", if (i == 0) Typeface.BOLD else Typeface.NORMAL)
+                setPadding(12, 10, 12, 10)
+                if (i == 0) background = rounded(Color.rgb(36, 42, 55), 20)
+                isFocusable = true
+                setOnFocusChangeListener { v, focus -> v.background = if (focus) rounded(Color.rgb(45, 53, 69), 20) else if (i == 0) rounded(Color.rgb(36, 42, 55), 20) else null }
+            })
+        }
+        val remoteButton = TextView(this).apply {
+            text = "  ⚙  Remote"
+            textSize = 13f
+            setTextColor(Color.rgb(208, 214, 225))
+            setPadding(16, 10, 0, 10)
+            isFocusable = true
+            setOnClickListener {
+                remotePanel.visibility = if (remotePanel.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+                requestFocus()
+            }
+        }
+        top.addView(remoteButton)
+        root.addView(top, LinearLayout.LayoutParams(-1, 52))
+
+        val hero = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(34, 22, 30, 22)
+            background = android.graphics.drawable.GradientDrawable(
+                android.graphics.drawable.GradientDrawable.Orientation.LEFT_RIGHT,
+                intArrayOf(Color.rgb(29, 43, 66), Color.rgb(19, 26, 42), Color.rgb(12, 15, 24))
+            ).apply { cornerRadius = 26f }
+        }
+        hero.addView(TextView(this).apply {
+            text = "N E X R O   O R I G I N A L S"
+            textSize = 10f
+            letterSpacing = .20f
+            setTextColor(Color.rgb(183, 201, 255))
         })
-        root.addView(header, LinearLayout.LayoutParams(-1, 48))
-        root.addView(TextView(this).apply {
-            text = "Your TV. Your apps."
-            textSize = 34f
+        hero.addView(TextView(this).apply {
+            text = "Your next\nfavourite thing."
+            textSize = 39f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.create("sans-serif", Typeface.BOLD)
+            setLineSpacing(-2f, 1f)
+            setPadding(0, 8, 0, 4)
+        })
+        hero.addView(TextView(this).apply {
+            text = "Movies, shows and the apps you love — all in one place."
+            textSize = 14f
+            setTextColor(Color.rgb(190, 198, 213))
+            setPadding(0, 0, 0, 12)
+        })
+        val heroActions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val explore = TextView(this).apply {
+            text = "  ▶   Explore your apps   "
+            textSize = 13f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.rgb(16, 19, 26))
+            setPadding(12, 11, 12, 11)
+            background = rounded(Color.WHITE, 24)
+            isFocusable = true
+            setOnClickListener { tiles.firstOrNull()?.requestFocus() }
+        }
+        heroActions.addView(explore)
+        heroActions.addView(TextView(this).apply {
+            text = "     Built for the big screen"
+            textSize = 12f
+            setTextColor(Color.rgb(169, 181, 203))
+        })
+        hero.addView(heroActions)
+        root.addView(hero, LinearLayout.LayoutParams(-1, 232).apply { topMargin = 16 })
+
+        val appsTitle = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        appsTitle.addView(TextView(this).apply {
+            text = "Your Apps"
+            textSize = 22f
             setTextColor(white)
             typeface = Typeface.create("sans-serif", Typeface.BOLD)
-            setPadding(0, 18, 0, 4)
         })
-        root.addView(TextView(this).apply {
-            text = "A cleaner home screen, built around what is actually installed."
-            textSize = 14f
-            setTextColor(muted)
-            setPadding(0, 0, 0, 20)
+        appsTitle.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+        appsTitle.addView(TextView(this).apply {
+            text = "INSTALLED ON THIS TV  ›"
+            textSize = 10f
+            letterSpacing = .09f
+            setTextColor(Color.rgb(139, 150, 173))
         })
+        root.addView(appsTitle, LinearLayout.LayoutParams(-1, 42).apply { topMargin = 13 })
 
-        val body = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.TOP }
-        val appPanel = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(20, 18, 20, 18)
-            background = rounded(panel, 22)
-        }
-        val titleRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        titleRow.addView(TextView(this).apply {
-            text = "YOUR INSTALLED APPS"
-            textSize = 11f
-            letterSpacing = .12f
-            setTextColor(mint)
-            typeface = Typeface.DEFAULT_BOLD
-        })
-        titleRow.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
-        titleRow.addView(TextView(this).apply { text = "LIVE"; textSize = 10f; setTextColor(muted) })
-        appPanel.addView(titleRow, LinearLayout.LayoutParams(-1, 28))
-
-        val scroll = ScrollView(this).apply { clipToPadding = false; isFillViewport = false }
-        val grid = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val scroll = HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; clipToPadding = false }
+        val appRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.TOP }
         apps.clear()
         tiles.clear()
         val pm = packageManager
@@ -134,146 +186,95 @@ class MainActivity : Activity() {
         }
         apps.sortBy { it.first.lowercase() }
         if (apps.isEmpty()) {
-            grid.addView(TextView(this).apply {
-                text = "No launchable apps found"
-                textSize = 21f
-                setTextColor(white)
-                typeface = Typeface.DEFAULT_BOLD
-                setPadding(8, 28, 8, 10)
-            })
-            grid.addView(TextView(this).apply {
-                text = "Apps installed on this TV will appear here. Open the TV app store to install more."
-                textSize = 13f
-                setTextColor(muted)
-                setPadding(8, 0, 8, 20)
+            appRow.addView(TextView(this).apply {
+                text = "No apps found yet. Install streaming apps from your TV's app store and they'll appear here."
+                textSize = 14f
+                setTextColor(Color.rgb(170, 178, 195))
+                setPadding(8, 20, 8, 20)
             })
         } else {
-            apps.chunked(4).forEach { rowApps ->
-                val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-                rowApps.forEach { app ->
-                    val idx = apps.indexOf(app)
-                    val label = app.first
-                    val view = LinearLayout(this).apply {
-                        orientation = LinearLayout.VERTICAL
+            apps.forEachIndexed { idx, app ->
+                val card = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    gravity = Gravity.CENTER
+                    setPadding(10, 12, 10, 10)
+                    background = rounded(Color.rgb(23, 27, 37), 20, Color.rgb(42, 48, 62))
+                    isFocusable = true
+                    isFocusableInTouchMode = true
+                    contentDescription = "Open ${app.first}"
+                    val iconBox = LinearLayout(this@MainActivity).apply {
                         gravity = Gravity.CENTER
-                        setPadding(8, 12, 8, 10)
-                        background = rounded(tile, 17, Color.rgb(45, 52, 66))
-                        isFocusable = true
-                        isFocusableInTouchMode = true
-                        contentDescription = "Open $label"
-                        val appIcon = ImageView(this@MainActivity).apply {
-                            try { setImageDrawable(packageManager.getApplicationIcon(apps[idx].second.component?.packageName ?: "")) } catch (_: Exception) {}
+                        background = rounded(Color.rgb(34 + (idx * 17 % 25), 39 + (idx * 11 % 20), 53 + (idx * 13 % 28)), 18)
+                        val image = ImageView(this@MainActivity).apply {
+                            try { setImageDrawable(packageManager.getApplicationIcon(app.second.component?.packageName ?: "")) } catch (_: Exception) {}
                             scaleType = ImageView.ScaleType.FIT_CENTER
                         }
-                        addView(appIcon, LinearLayout.LayoutParams(42, 42))
-                        addView(TextView(this@MainActivity).apply {
-                            text = label
-                            textSize = 13f
-                            gravity = Gravity.CENTER
-                            maxLines = 1
-                            ellipsize = android.text.TextUtils.TruncateAt.END
-                            setTextColor(white)
-                            setPadding(0, 9, 0, 0)
-                        }, LinearLayout.LayoutParams(-1, -2))
-                        setOnFocusChangeListener { v, focus ->
-                            v.background = rounded(if (focus) Color.rgb(26, 57, 55) else tile, 17, if (focus) mint else Color.rgb(45, 52, 66))
-                        }
-                        setOnClickListener { launchApp(idx) }
+                        addView(image, LinearLayout.LayoutParams(58, 58))
                     }
-                    row.addView(view, LinearLayout.LayoutParams(0, 112, 1f).apply { marginEnd = 10 })
-                    tiles.add(view)
+                    addView(iconBox, LinearLayout.LayoutParams(94, 88))
+                    addView(TextView(this@MainActivity).apply {
+                        text = app.first
+                        textSize = 12f
+                        gravity = Gravity.CENTER
+                        maxLines = 1
+                        ellipsize = android.text.TextUtils.TruncateAt.END
+                        setTextColor(white)
+                        setPadding(0, 9, 0, 0)
+                    }, LinearLayout.LayoutParams(-1, -2))
+                    setOnFocusChangeListener { v, focus ->
+                        v.background = rounded(if (focus) Color.rgb(44, 54, 72) else Color.rgb(23, 27, 37), 20, if (focus) Color.WHITE else Color.rgb(42, 48, 62))
+                        if (focus) v.scaleX = 1.04f else v.scaleX = 1f
+                        if (focus) v.scaleY = 1.04f else v.scaleY = 1f
+                    }
+                    setOnClickListener { launchApp(idx) }
                 }
-                repeat(4 - rowApps.size) { row.addView(View(this), LinearLayout.LayoutParams(0, 112, 1f).apply { marginEnd = 10 }) }
-                grid.addView(row, LinearLayout.LayoutParams(-1, 112).apply { bottomMargin = 10 })
+                appRow.addView(card, LinearLayout.LayoutParams(128, 130).apply { marginEnd = 13 })
+                tiles.add(card)
             }
         }
-        scroll.addView(grid)
-        appPanel.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-        body.addView(appPanel, LinearLayout.LayoutParams(0, -1, 1.7f).apply { marginEnd = 18 })
+        scroll.addView(appRow)
+        root.addView(scroll, LinearLayout.LayoutParams(-1, 144))
 
-        val pair = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(22, 22, 22, 22)
-            background = rounded(Color.rgb(16, 27, 32), 22, Color.rgb(40, 74, 73))
+        remotePanel = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(18, 12, 18, 12)
+            background = rounded(Color.rgb(19, 23, 32), 18, Color.rgb(49, 57, 74))
+            visibility = View.GONE
         }
-        pair.addView(TextView(this).apply {
-            text = "PHONE REMOTE"
-            textSize = 11f
-            letterSpacing = .13f
-            setTextColor(mint)
-            typeface = Typeface.DEFAULT_BOLD
-        })
-        pair.addView(TextView(this).apply {
-            text = "Pair your phone"
-            textSize = 23f
-            setTextColor(white)
-            typeface = Typeface.DEFAULT_BOLD
-            setPadding(0, 16, 0, 6)
-        })
-        pair.addView(TextView(this).apply {
-            text = "Connect Nexro Remote AI from a phone on the same Wi-Fi network."
-            textSize = 13f
-            setTextColor(muted)
-            setPadding(0, 0, 0, 14)
-        })
-        pair.addView(TextView(this).apply {
-            text = "PAIRING PIN"
-            textSize = 10f
-            letterSpacing = .15f
-            setTextColor(muted)
-        })
-        pinView = TextView(this).apply {
-            text = bridge.pin
-            textSize = 35f
-            letterSpacing = .12f
-            setTextColor(white)
-            typeface = Typeface.create("sans-serif", Typeface.BOLD)
-            setPadding(0, 3, 0, 4)
-        }
-        pair.addView(pinView)
-        pair.addView(TextView(this).apply {
-            text = "TV BRIDGE ADDRESS"
-            textSize = 10f
-            letterSpacing = .13f
-            setTextColor(muted)
-            setPadding(0, 12, 0, 5)
-        })
-        ipView = TextView(this).apply {
-            text = "${localIp()}:8765"
-            textSize = 16f
-            setTextColor(mint)
-            typeface = Typeface.DEFAULT_BOLD
-        }
-        pair.addView(ipView)
-        val rotate = TextView(this).apply {
-            text = "↻  Generate new PIN"
-            textSize = 13f
-            setTextColor(white)
-            setPadding(0, 18, 0, 14)
-            isFocusable = true
-            setOnClickListener { bridge.rotatePin(); pinView.text = bridge.pin }
-        }
-        pair.addView(rotate)
-        status = TextView(this).apply {
-            text = "Starting local bridge…"
+        val remoteInfo = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        remoteInfo.addView(TextView(this).apply { text = "PHONE REMOTE  ·  OPTIONAL"; textSize = 10f; letterSpacing = .1f; setTextColor(Color.rgb(177, 193, 225)) })
+        remoteInfo.addView(TextView(this).apply { text = "Pair a phone on the same Wi-Fi to control this TV."; textSize = 12f; setTextColor(Color.rgb(177, 184, 199)); setPadding(0, 5, 0, 0) })
+        remoteInfo.addView(TextView(this).apply { text = "PIN  ${bridge.pin}     ADDRESS  ${localIp()}:8765"; textSize = 14f; setTextColor(white); typeface = Typeface.DEFAULT_BOLD; setPadding(0, 8, 0, 0) })
+        pinView = TextView(this).apply { text = bridge.pin; visibility = View.GONE }
+        ipView = TextView(this).apply { text = "${localIp()}:8765"; visibility = View.GONE }
+        status = TextView(this).apply { text = "Local remote bridge starting…"; textSize = 10f; setTextColor(Color.rgb(140, 151, 170)); setPadding(0, 5, 0, 0) }
+        remoteInfo.addView(status)
+        remotePanel.addView(remoteInfo, LinearLayout.LayoutParams(0, -2, 1f))
+        val pinButton = TextView(this).apply {
+            text = "Generate new PIN"
             textSize = 12f
-            setTextColor(muted)
-            setPadding(0, 10, 0, 0)
+            setTextColor(white)
+            setPadding(14, 10, 14, 10)
+            background = rounded(Color.rgb(40, 47, 61), 20)
+            isFocusable = true
+            setOnClickListener { bridge.rotatePin(); pinView.text = bridge.pin; remoteInfo.getChildAt(2).let { (it as TextView).text = "PIN  ${bridge.pin}     ADDRESS  ${localIp()}:8765" } }
         }
-        pair.addView(status)
-        body.addView(pair, LinearLayout.LayoutParams(0, -2, 1f))
-        root.addView(body, LinearLayout.LayoutParams(-1, 0, 1f))
+        remotePanel.addView(pinButton)
+        root.addView(remotePanel, LinearLayout.LayoutParams(-1, -2).apply { topMargin = 8 })
         root.addView(TextView(this).apply {
-            text = "NEXRO  ·  PRIVATE LOCAL PAIRING  ·  NO FAKE CONTENT"
-            textSize = 10f
-            letterSpacing = .1f
+            text = "NEXRO  ·  MADE FOR YOUR LIVING ROOM"
+            textSize = 9f
+            letterSpacing = .12f
             setTextColor(Color.rgb(91, 101, 119))
             gravity = Gravity.CENTER
-            setPadding(0, 16, 0, 0)
-        }, LinearLayout.LayoutParams(-1, 30))
+            setPadding(0, 8, 0, 0)
+        }, LinearLayout.LayoutParams(-1, 22))
         setContentView(root)
         root.requestFocus()
     }
+
+    private lateinit var remotePanel: LinearLayout
 
     private fun rounded(color: Int, radius: Int, stroke: Int? = null): android.graphics.drawable.GradientDrawable =
         android.graphics.drawable.GradientDrawable().apply {
