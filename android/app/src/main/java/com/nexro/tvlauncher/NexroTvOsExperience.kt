@@ -391,7 +391,7 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
         top.addView(text("nexro", 28f, white, true))
         top.addView(text(" TV", 18f, muted))
         top.addView(View(a), LinearLayout.LayoutParams(0, 1, 1f))
-        top.addView(focusButton("‹  Settings") { show("Settings") })
+        top.addView(focusButton("‹  Settings") { show("IconStyle") })
         outer.addView(top, LinearLayout.LayoutParams(-1, dp(54)))
         val panel = LinearLayout(a).apply {
             orientation = LinearLayout.VERTICAL
@@ -434,7 +434,7 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
                 gravity = Gravity.CENTER; setPadding(0, dp(8), 0, 0)
             })
             option.setOnFocusChangeListener { v, focus -> v.background = tileBackground(focus || prefs.getString("icon_style", "Squircle") == style) }
-            option.setOnClickListener { prefs.edit().putString("icon_style", style).apply(); show("Settings") }
+            option.setOnClickListener { prefs.edit().putString("icon_style", style).apply(); show("IconStyle") }
             styleRow.addView(option, LinearLayout.LayoutParams(0, dp(104), 1f).apply { marginEnd = dp(8) })
         }
         panel.addView(styleRow, LinearLayout.LayoutParams(-1, dp(108)))
@@ -446,7 +446,7 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
             val chosen = prefs.getString("icon_size", "Medium") == size
             val btn = focusButton(size, chosen) {
                 prefs.edit().putString("icon_size", size).apply()
-                show("Settings")
+                show("IconStyle")
             }
             sizeRow.addView(btn, LinearLayout.LayoutParams(0, dp(44), 1f).apply { marginEnd = dp(8) })
         }
@@ -464,7 +464,7 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Restore") { _, _ ->
                     prefs.edit().putString("icon_style", "Squircle").putString("icon_size", "Medium").remove("icon_pack").apply()
-                    show("Settings")
+                    show("IconStyle")
                 }.show()
         }, LinearLayout.LayoutParams(-1, dp(58)).apply { topMargin = dp(8) })
         val scroll = ScrollView(a).apply { isFillViewport = true; isVerticalScrollBarEnabled = false }
@@ -628,8 +628,14 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
 
     fun handleKeyCode(keyCode: Int): Boolean {
         when (keyCode) {
-            KeyEvent.KEYCODE_DPAD_LEFT -> { if (page == "Home") moveFocus("left") else return false; return true }
-            KeyEvent.KEYCODE_DPAD_RIGHT -> { if (page == "Home") moveFocus("right") else return false; return true }
+            KeyEvent.KEYCODE_DPAD_LEFT -> {
+                if (page == "Home" && isFocusInsideDock()) { moveFocus("left"); return true }
+                return false
+            }
+            KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                if (page == "Home" && isFocusInsideDock()) { moveFocus("right"); return true }
+                return false
+            }
             // Let Android's native focus engine move between the home controls and dock.
             // DPAD up/down must never unexpectedly navigate into Settings or Apps.
             KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> return false
@@ -644,6 +650,17 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
             }
         }
         return false
+    }
+
+
+    private fun isFocusInsideDock(): Boolean {
+        if (!::dockRow.isInitialized) return false
+        var current = root.findFocus() ?: return false
+        while (current.parent is View) {
+            if (current.parent === dockRow) return true
+            current = current.parent as View
+        }
+        return current === dockRow
     }
 
     private fun moveFocus(action: String) {
