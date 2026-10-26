@@ -8,6 +8,7 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -22,6 +23,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -81,6 +84,7 @@ private fun TvLauncherRoot() {
     val parallax = prefs[booleanPreferencesKey("parallax")] ?: true
     val reduceEffects = prefs[booleanPreferencesKey("reduce_effects")] ?: false
     var settingsOpen by remember { mutableStateOf(false) }
+    BackHandler(enabled = settingsOpen) { settingsOpen = false }
     var helpOpen by remember { mutableStateOf(false) }
     var clock by remember { mutableStateOf(clockText()) }
     val apps = remember { mutableStateListOf<TvApp>() }
@@ -114,7 +118,7 @@ private fun TvLauncherRoot() {
             else LazyRow(horizontalArrangement = Arrangement.spacedBy(32.dp), contentPadding = PaddingValues(vertical = 28.dp, horizontal = 4.dp)) {
                 items(apps, key = { it.packageName }) { app ->
                     TvAppTile(app, palette, iconSize, labels, parallax, reduceEffects) {
-                        context.packageManager.getLaunchIntentForPackage(app.packageName)?.let(context::startActivity)
+                        context.packageManager.getLaunchIntentForPackage(app.packageName)?.let { intent -> context.startActivity(intent) }
                     }
                 }
             }
@@ -127,7 +131,7 @@ private fun TvLauncherRoot() {
                     Modifier.align(Alignment.CenterEnd).width(420.dp).fillMaxHeight()
                         .shadow(28.dp, RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp))
                         .clip(RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp))
-                        .background(palette.panel.copy(alpha = 0.96f)).padding(horizontal = 24.dp, vertical = 24.dp),
+                        .background(palette.panel.copy(alpha = 0.96f)).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -160,7 +164,7 @@ private fun TvLauncherRoot() {
                     SettingRow("Reduce effects", if (reduceEffects) "On" else "Off", palette) {
                         scope.launch { activity.launcherStore.edit { it[booleanPreferencesKey("reduce_effects")] = !reduceEffects } }
                     }
-                    SettingRow("Default launcher help", "Instructions", palette) { helpOpen = !helpOpen }
+                    SettingRow("Default launcher help", "Open system settings", palette) { try { context.startActivity(Intent(android.provider.Settings.ACTION_HOME_SETTINGS)) } catch (_: Exception) { helpOpen = true } }
                     SettingRow("About", "Version 1.2.0", palette) { helpOpen = !helpOpen }
                     if (helpOpen) Text("Press Home, choose Nexro TV Launcher, then select Always. Some Google TV builds restrict changing the default Home app.", color = palette.secondary, fontSize = 14.sp)
                     Spacer(Modifier.weight(1f))
