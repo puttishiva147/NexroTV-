@@ -430,7 +430,7 @@ private class TvBridge(private val activity: MainActivity, private val report: (
 
     private fun respondHtml(s: java.net.Socket) {
         val data = activity.assets.open("index.html").bufferedReader(Charsets.UTF_8).use { it.readText() }.toByteArray(Charsets.UTF_8)
-        val header = "HTTP/1.1 200 OK\\r\\nContent-Type: text/html; charset=utf-8\\r\\nCache-Control: no-store\\r\\nConnection: close\\r\\nContent-Length: ${data.size}\\r\\n\\r\\n"
+        val header = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nCache-Control: no-store\r\nConnection: close\r\nContent-Length: ${data.size}\r\n\r\n"
         s.getOutputStream().apply { write(header.toByteArray(Charsets.UTF_8)); write(data); flush() }
     }
 
