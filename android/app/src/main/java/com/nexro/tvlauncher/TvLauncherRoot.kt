@@ -202,7 +202,7 @@ fun TvLauncherRoot(onOpenRemote: () -> Unit = {}) {
             modifier = Modifier.align(Alignment.CenterEnd)
         ) {
             SettingsPanel(
-                colors = theme, prefs = prefs, section = settingsSection, firstRequester = firstSettingFocus,
+                colors = theme, prefs = prefs, section = settingsSection, firstRequester = firstSettingFocus, onOpenRemote = onOpenRemote,
                 onBack = { if (settingsSection != null) settingsSection = null else settingsOpen = false },
                 onOpenSection = { settingsSection = it },
                 onTheme = { value -> scope.launch { context.launcherStore.edit { it[KEY_THEME] = value } } },
@@ -295,6 +295,7 @@ private fun SettingsPanel(
     prefs: LauncherPrefs,
     section: String?,
     firstRequester: FocusRequester,
+    onOpenRemote: () -> Unit,
     onBack: () -> Unit,
     onOpenSection: (String) -> Unit,
     onTheme: (String) -> Unit,
@@ -327,6 +328,7 @@ private fun SettingsPanel(
                 SettingsRow("◐", "Reduce effects", if (prefs.reduceEffects) "On" else "Off", colors) { onReduce(!prefs.reduceEffects) }
                 SettingsRow("▧", "Wallpaper", prefs.wallpaper, colors) { onOpenSection("Wallpaper") }
                 SettingsRow("⌂", "Default launcher help", "", colors, onClick = onDefaultHelp)
+                SettingsRow("▣", "Phone remote", "Pair / reconnect", colors, onClick = onOpenRemote)
                 SettingsRow("ⓘ", "About", "Version 1.2.0", colors) { onOpenSection("About") }
             } else {
                 when (section) {
