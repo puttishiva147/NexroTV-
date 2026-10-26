@@ -234,22 +234,38 @@ class MainActivity : ComponentActivity() {
             "volume_up" -> { (getSystemService(AUDIO_SERVICE) as AudioManager).adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI); message = "Volume up requested." }
             "volume_down" -> { (getSystemService(AUDIO_SERVICE) as AudioManager).adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI); message = "Volume down requested." }
             "mute", "unmute" -> { val a = getSystemService(AUDIO_SERVICE) as AudioManager; a.adjustStreamVolume(AudioManager.STREAM_MUSIC, if (action == "mute") AudioManager.ADJUST_MUTE else AudioManager.ADJUST_UNMUTE, AudioManager.FLAG_SHOW_UI); message = if (action == "mute") "Mute requested." else "Sound enabled." }
-            "up", "down", "left", "right" -> { runOnUiThread { move(action) }; message = "Launcher focus moved $action." }
-            "select" -> { runOnUiThread { launchApp(selected) }; message = "Opening selected app." }
-            "home" -> { runOnUiThread { move("home"); if (apps.isNotEmpty()) { selected = 0; tiles.firstOrNull()?.requestFocus() } }; message = "Returned to Nexro home." }
+            "up", "down", "left", "right" -> {
+                val keyCode = when (action) {
+                    "up" -> KeyEvent.KEYCODE_DPAD_UP
+                    "down" -> KeyEvent.KEYCODE_DPAD_DOWN
+                    "left" -> KeyEvent.KEYCODE_DPAD_LEFT
+                    else -> KeyEvent.KEYCODE_DPAD_RIGHT
+                }
+                runOnUiThread { dispatchRemoteKey(keyCode) }
+                message = "Remote navigation: $action."
+            }
+            "select" -> { runOnUiThread { dispatchRemoteKey(KeyEvent.KEYCODE_DPAD_CENTER) }; message = "Select button sent to the focused item." }
+            "home" -> { runOnUiThread { dispatchRemoteKey(KeyEvent.KEYCODE_HOME) }; message = "Home button sent." }
             "open_app" -> {
                 val name = value?.lowercase()?.trim().orEmpty()
                 val i = apps.indexOfFirst { it.first.lowercase().contains(name) || name.contains(it.first.lowercase()) }
                 if (i >= 0) { runOnUiThread { launchApp(i) }; message = "Opening ${apps[i].first}." } else { ok = false; message = "App not found: $name" }
             }
             "play", "pause" -> { val a = getSystemService(AUDIO_SERVICE) as AudioManager; a.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)); a.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)); message = "Media key sent; the active app decides whether to respond." }
-            "back" -> { runOnUiThread { onBackPressed() }; message = "Back requested." }
+            "back" -> { runOnUiThread { dispatchRemoteKey(KeyEvent.KEYCODE_BACK) }; message = "Back button sent." }
             "settings" -> { runOnUiThread { try { startActivity(Intent(android.provider.Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (_: Exception) {} }; message = "Opening Android settings." }
             "power_off" -> { ok = false; message = "Android does not allow ordinary launcher apps to power off every TV." }
             "channel_up", "channel_down", "number", "input" -> { ok = false; message = "This Android TV does not expose this control to the launcher." }
             else -> { ok = false; message = "Unsupported command: $action" }
         }
         return JSONObject().put("ok", ok).put("executed", ok).put("simulated", false).put("action", action).put("message", message)
+    }
+
+    private fun dispatchRemoteKey(keyCode: Int) {
+        val down = KeyEvent(KeyEvent.ACTION_DOWN, keyCode)
+        val up = KeyEvent(KeyEvent.ACTION_UP, keyCode)
+        dispatchKeyEvent(down)
+        dispatchKeyEvent(up)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
