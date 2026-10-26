@@ -114,7 +114,9 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
             if (page == "Home" && ::dockRow.isInitialized && dockRow.childCount > 0) {
                 dockRow.getChildAt(selectedIndex.coerceIn(0, dockRow.childCount - 1)).requestFocus()
             } else {
-                root.requestFocus()
+                val firstControl = root.focusables(View.FOCUS_FORWARD)
+                    .firstOrNull { it !== root && it.isFocusable && it.visibility == View.VISIBLE }
+                if (firstControl != null) firstControl.requestFocus() else root.requestFocus()
             }
         }
     }
@@ -524,7 +526,6 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
         head.addView(View(a), LinearLayout.LayoutParams(0, 1, 1f))
         head.addView(focusButton("‹  Home") { show("Home") })
         outer.addView(head, LinearLayout.LayoutParams(-1, dp(58)))
-        head.requestFocus()
         if (apps.isEmpty()) {
             outer.addView(text("No launchable apps found", 20f, muted))
             return
@@ -607,7 +608,9 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
 
     private fun actionRow(glyph: String, title: String, subtitle: String, click: () -> Unit): View =
         LinearLayout(a).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+            isFocusable = true; isFocusableInTouchMode = true; isClickable = true
+            elevation = dp(3).toFloat()
             background = tileBackground(false); setPadding(dp(12), dp(5), dp(12), dp(5))
             addView(text(glyph, 22f, muted), LinearLayout.LayoutParams(dp(42), -2))
             val copy = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
@@ -615,7 +618,14 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
             copy.addView(text(subtitle, 11f, muted))
             addView(copy, LinearLayout.LayoutParams(0, -2, 1f))
             addView(text("›", 24f, muted))
-            setOnFocusChangeListener { v, f -> v.background = tileBackground(f) }
+            setOnFocusChangeListener { v, f ->
+                v.background = tileBackground(f)
+                v.elevation = dp(if (f) 12 else 3).toFloat()
+                v.translationZ = dp(if (f) 6 else 0).toFloat()
+                v.animate().cancel()
+                v.animate().scaleX(if (f) 1.025f else 1f).scaleY(if (f) 1.025f else 1f)
+                    .setDuration(if (motion()) 150L else 0L).start()
+            }
             setOnClickListener { click() }
         }
 
