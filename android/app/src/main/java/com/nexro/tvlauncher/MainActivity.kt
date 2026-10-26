@@ -38,6 +38,7 @@ class MainActivity : Activity() {
     private val apps = mutableListOf<Pair<String, Intent>>()
     private val tiles = mutableListOf<View>()
     private var selected = 0
+    private var tvOsExperience: NexroTvOsExperience? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,7 +49,8 @@ class MainActivity : Activity() {
     }
 
     private fun render() {
-        NexroTvOsExperience(this) { showRemoteSettings() }.render()
+        tvOsExperience = NexroTvOsExperience(this) { showRemoteSettings() }
+        tvOsExperience!!.render()
         bridge.start()
     }
 
@@ -96,6 +98,7 @@ class MainActivity : Activity() {
     }
 
     fun execute(action: String, value: String?): JSONObject {
+        tvOsExperience?.let { return it.executeRemote(action, value) }
         var ok = true
         val message: String
         when (action) {
