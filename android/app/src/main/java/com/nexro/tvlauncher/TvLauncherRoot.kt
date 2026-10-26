@@ -10,7 +10,7 @@ import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateColorAsState
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.fadeIn
@@ -424,7 +424,7 @@ private fun loadInstalledApps(context: Context): List<InstalledApp> {
         val pkg = info.activityInfo.packageName
         if (pkg == context.packageName || !seen.add(pkg)) return@mapNotNull null
         runCatching {
-            val drawable = try { info.loadBanner(pm) ?: info.loadIcon(pm) } catch (_: Exception) { info.loadIcon(pm) }
+            val drawable = try { info.activityInfo.loadBanner(pm) ?: info.loadIcon(pm) } catch (_: Exception) { info.loadIcon(pm) }
             InstalledApp(info.loadLabel(pm).toString(), pkg, drawableToBitmap(drawable).asImageBitmap())
         }.getOrNull()
     }.sortedBy { it.name.lowercase(Locale.getDefault()) }
