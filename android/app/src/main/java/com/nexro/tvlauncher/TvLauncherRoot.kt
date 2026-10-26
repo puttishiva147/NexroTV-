@@ -488,7 +488,7 @@ private fun LauncherButton(
             .border(1.dp, colors.textSecondary.copy(alpha = 0.22f), CircleShape)
             .clickable(onClick = onClick)
             .focusable()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = if (label in setOf("⌕", "⚙", "⌁", "●")) 0.dp else 20.dp, vertical = if (label in setOf("⌕", "⚙", "⌁", "●")) 0.dp else 12.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(label, color = if (focused) colors.focusText else colors.textPrimary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
