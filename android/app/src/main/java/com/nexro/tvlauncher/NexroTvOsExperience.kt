@@ -80,8 +80,11 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
             val pkg = info.activityInfo.packageName
             if (pkg != a.packageName && seen.add(pkg) && pm.getLaunchIntentForPackage(pkg) != null) {
                 val appInfo = info.activityInfo.applicationInfo
+                // Preserve the real activity icon; do not tint or substitute a generic package icon.
                 apps.add(Item(info.loadLabel(pm).toString(), pkg,
-                    try { pm.getApplicationIcon(pkg) } catch (_: Exception) { a.applicationInfo.loadIcon(pm) },
+                    try { info.loadIcon(pm) } catch (_: Exception) {
+                        try { pm.getApplicationIcon(pkg) } catch (_: Exception) { a.applicationInfo.loadIcon(pm) }
+                    },
                     (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0))
             }
         }
@@ -100,6 +103,8 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
         when (destination) {
             "Home" -> buildHome()
             "Settings" -> buildSettings()
+            "IconStyle" -> buildIconStyle()
+            "QuickSettings" -> buildQuickSettings()
             "Apps" -> buildApps()
             "Search" -> buildSearch(query)
             else -> buildHome()
@@ -133,7 +138,9 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
             setPadding(dp(8), dp(5), dp(8), dp(5))
         }
         addControl(controls, "⌕", "Search") { show("Search") }
-        addControl(controls, "⚙", "Settings") { show("Settings") }
+        addControl(controls, "▦", "All Apps") { show("Apps") }
+        addControl(controls, "☷", "Quick Settings") { show("QuickSettings") }
+        addControl(controls, "⚙", "Nexro TV Settings") { show("Settings") }
         addControl(controls, "⌁", "Phone remote") { remoteSettings() }
         val time = TextView(a).apply {
             textSize = 14f; setTextColor(white); gravity = Gravity.CENTER
@@ -277,7 +284,104 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
         return tile
     }
 
+
+    /** Main launcher settings. Icon styling is a separate destination, never the Settings home. */
     private fun buildSettings() {
+        val outer = LinearLayout(a).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(42), dp(22), dp(42), dp(24))
+        }
+        root.addView(outer, FrameLayout.LayoutParams(-1, -1))
+        val header = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val titles = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
+        titles.addView(text("Nexro TV Settings", 30f, white, true))
+        titles.addView(text("Personalize your launcher and control your TV", 14f, muted))
+        header.addView(titles, LinearLayout.LayoutParams(0, -2, 1f))
+        header.addView(focusButton("‹  Home") { show("Home") })
+        outer.addView(header, LinearLayout.LayoutParams(-1, dp(66)))
+        outer.addView(divider(), LinearLayout.LayoutParams(-1, dp(1)).apply { topMargin = dp(12); bottomMargin = dp(14) })
+
+        val sc = ScrollView(a).apply { isVerticalScrollBarEnabled = false }
+        val list = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
+        list.addView(actionRow("▣", "Appearance & App Icons", "Icon shape, size and icon display options") {
+            show("IconStyle")
+        }, LinearLayout.LayoutParams(-1, dp(70)).apply { bottomMargin = dp(8) })
+        list.addView(actionRow("☷", "Quick Settings", "Network, display, sound and system shortcuts") {
+            show("QuickSettings")
+        }, LinearLayout.LayoutParams(-1, dp(70)).apply { bottomMargin = dp(8) })
+        list.addView(actionRow("⌁", "Phone Remote Connection", "Pair a phone using the TV address and PIN") {
+            remoteSettings()
+        }, LinearLayout.LayoutParams(-1, dp(70)).apply { bottomMargin = dp(8) })
+        list.addView(actionRow("⚙", "Android System Settings", "Open the actual settings app provided by your TV") {
+            openAndroidSettings()
+        }, LinearLayout.LayoutParams(-1, dp(70)).apply { bottomMargin = dp(8) })
+        list.addView(actionRow("↻", "Refresh Installed Apps", "Reload apps and their original Android icons") {
+            loadApps(); show("Settings")
+            Toast.makeText(a, "Installed apps refreshed", Toast.LENGTH_SHORT).show()
+        }, LinearLayout.LayoutParams(-1, dp(70)))
+        sc.addView(list)
+        outer.addView(sc, LinearLayout.LayoutParams(-1, 0, 1f).apply { topMargin = dp(4) })
+    }
+
+    /** Dedicated quick-settings hub. Shortcuts launch Android's real settings panels. */
+    private fun buildQuickSettings() {
+        val outer = LinearLayout(a).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(42), dp(22), dp(42), dp(24))
+        }
+        root.addView(outer, FrameLayout.LayoutParams(-1, -1))
+        val header = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val titles = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
+        titles.addView(text("Quick Settings", 30f, white, true))
+        titles.addView(text("Shortcuts open Android's system controls", 14f, muted))
+        header.addView(titles, LinearLayout.LayoutParams(0, -2, 1f))
+        header.addView(focusButton("‹  Back") { show("Settings") })
+        outer.addView(header, LinearLayout.LayoutParams(-1, dp(66)))
+        outer.addView(divider(), LinearLayout.LayoutParams(-1, dp(1)).apply { topMargin = dp(12); bottomMargin = dp(14) })
+
+        val grid = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
+        fun shortcut(glyph: String, title: String, subtitle: String, action: String) {
+            grid.addView(actionRow(glyph, title, subtitle) { openSystemPage(action) },
+                LinearLayout.LayoutParams(-1, dp(72)).apply { bottomMargin = dp(8) })
+        }
+        shortcut("⌁", "Network & Internet", "Wi-Fi and available network controls", android.provider.Settings.ACTION_WIFI_SETTINGS)
+        shortcut("ᛒ", "Bluetooth", "Pair and manage Bluetooth devices", android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
+        shortcut("☼", "Display", "Screen, resolution and display preferences", android.provider.Settings.ACTION_DISPLAY_SETTINGS)
+        shortcut("♫", "Sound", "Volume and audio settings", android.provider.Settings.ACTION_SOUND_SETTINGS)
+        shortcut("⚙", "All Android Settings", "Open the TV's native Settings application", android.provider.Settings.ACTION_SETTINGS)
+        outer.addView(grid, LinearLayout.LayoutParams(-1, 0, 1f))
+    }
+
+    private fun openAndroidSettings() {
+        openSystemPage(android.provider.Settings.ACTION_SETTINGS)
+    }
+
+    private fun openSystemPage(action: String) {
+        val candidates = when (action) {
+            android.provider.Settings.ACTION_SETTINGS -> listOf(
+                android.provider.Settings.ACTION_SETTINGS,
+                "android.settings.DEVICE_INFO_SETTINGS",
+                android.provider.Settings.ACTION_WIFI_SETTINGS
+            )
+            else -> listOf(action, android.provider.Settings.ACTION_SETTINGS)
+        }
+        for (candidate in candidates) {
+            try {
+                val intent = Intent(candidate).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                if (intent.resolveActivity(a.packageManager) != null) {
+                    a.startActivity(intent)
+                    return
+                }
+            } catch (_: Exception) { }
+        }
+        AlertDialog.Builder(a)
+            .setTitle("System settings unavailable")
+            .setMessage("This TV does not expose that settings page to launcher apps. Try opening All Android Settings or use the TV manufacturer's Settings button.")
+            .setPositiveButton("OK", null)
+            .show()
+    }
+
+    private fun buildIconStyle() {
         val outer = LinearLayout(a).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(42), dp(20), dp(42), dp(24))
@@ -287,7 +391,7 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
         top.addView(text("nexro", 28f, white, true))
         top.addView(text(" TV", 18f, muted))
         top.addView(View(a), LinearLayout.LayoutParams(0, 1, 1f))
-        top.addView(focusButton("‹  Back") { show("Home") })
+        top.addView(focusButton("‹  Settings") { show("Settings") })
         outer.addView(top, LinearLayout.LayoutParams(-1, dp(54)))
         val panel = LinearLayout(a).apply {
             orientation = LinearLayout.VERTICAL
@@ -502,7 +606,7 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
                 message = "Volume command sent."
             }
             "home" -> { a.runOnUiThread { show("Home") }; message = "Returned to Nexro home." }
-            "settings" -> { a.runOnUiThread { show("Settings") }; message = "Opened Nexro settings." }
+            "settings" -> { a.runOnUiThread { show("Settings") }; message = "Opened Nexro TV settings." }
             "back" -> { a.runOnUiThread { if (page != "Home") show("Home") else a.onBackPressed() }; message = "Back requested." }
             "open_app" -> {
                 val term = value.orEmpty().trim()
@@ -526,19 +630,15 @@ class NexroTvOsExperience(private val a: Activity, private val remoteSettings: (
         when (keyCode) {
             KeyEvent.KEYCODE_DPAD_LEFT -> { if (page == "Home") moveFocus("left") else return false; return true }
             KeyEvent.KEYCODE_DPAD_RIGHT -> { if (page == "Home") moveFocus("right") else return false; return true }
-            KeyEvent.KEYCODE_DPAD_UP -> {
-                if (page == "Home") { show("Settings"); return true }
-                return false
-            }
-            KeyEvent.KEYCODE_DPAD_DOWN -> {
-                if (page == "Home") { show("Apps"); return true }
-                return false
-            }
+            // Let Android's native focus engine move between the home controls and dock.
+            // DPAD up/down must never unexpectedly navigate into Settings or Apps.
+            KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> return false
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
                 root.findFocus()?.performClick()
                 return true
             }
             KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_ESCAPE -> {
+                if (page == "IconStyle" || page == "QuickSettings") { show("Settings"); return true }
                 if (page != "Home") { show("Home"); return true }
                 return false
             }
